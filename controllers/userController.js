@@ -2,6 +2,8 @@ const User = require("../models/userModel");
 const validator = require("validator");
 const bcrypt = require("bcryptjs");
 const createToken = require("../utils/createToken");
+const crypto = require("crypto");
+const sendMail = require("../utils/sendEmail");
 
 const registerUser = async (req, res) => {
   const { email, password } = req.body;
@@ -52,25 +54,110 @@ const authUser = async (req, res) => {
   try {
     createToken(res, user._id);
     res.json({
-        email: user.email,
-        isAdmin: user.isAdmin,
-        id: user._id
-    })
+      email: user.email,
+      isAdmin: user.isAdmin,
+      id: user._id,
+    });
   } catch (error) {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
 const logoutCurrentUser = async (req, res) => {
-    console.log(req.user)
-    res.cookie("jwt", "", {
-      httpOnly: true,
-      expires: new Date(0),
-    });
-    res.status(200).json({message: "user logged out successfully"})
-  };
+  console.log(req.user);
+  res.cookie("jwt", "", {
+    httpOnly: true,
+    expires: new Date(0),
+  });
+  res.status(200).json({ message: "user logged out successfully" });
+};
+
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) return res.status(400).json({message: "Input Email"})
+
+    //get user based on email
+    const user = await User.findOne({ email });
+    if (!user)
+      res.status(404).json({ message: "User not found with given mail" });
+
+    //generate OTP
+    const otp = crypto.randomInt(100000, 999999).toString();
+
+    //set OTP and expiration in database
+    user.otp = otp;
+    user.otpExpiration = Date.now() + 15 * 60 * 1000; //OTP valid for 15 minuites
+    user.otpVerified = false;
+    await user.save();
+
+    //send OTP to mail
+    await sendMail(
+      email,
+      "PASSWORD RESET OTP",
+      `Your OTP for password reset is ${otp}. It is valid for 15 mins`
+    );
+
+    res.status(200).json({ message: `OTP sent to ${email}`, email });
+  } catch (err) {
+    res.status(500).json({ message: "Internal Server error" });
+  }
+};
+
+const verifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) return res.status(400).json({ message: "User not found" });
+
+    if (user.otp !== otp || user.otpExpiration < Date.now())
+      return res.status(401).json({ message: "Invaid or expired OTP" });
+
+    //mark otp as verified
+    user.otpVerified = true;
+    await user.save();
+
+    res
+      .status(200)
+      .json({ message: "OTP verified, proceed to reset password", email });
+  } catch (err) {
+    res.status(500).json({ message: "Internal Server error" });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { email, newPassword, confirmPassword } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) return res.status(400).json({ message: "User not found" });
+
+    if (!user.otpVerified)
+      return res.status(401).json({ message: "OTP not verified" });
+
+      //check if passwords match
+        if (newPassword !== confirmPassword) return res.status(401).json({message: "Passwords do not match"})
+
+
+            user.password = await bcrypt.hash(newPassword, 10)
+            user.otp = null
+            user.otpExpiration = null;
+            user.otpVerified = false;
+            await user.save()
+
+
+            res.status(200).json({message: 'Password reset Successful'})
+  }catch (err) {
+    res.status(500).json({ message: "Internal Server error" });
+  }
+};
 
 module.exports = {
   registerUser,
   authUser,
-  logoutCurrentUser
+  logoutCurrentUser,
+  forgotPassword,
+  verifyOtp,
+  resetPassword,
 };

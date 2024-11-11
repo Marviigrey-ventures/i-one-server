@@ -15,7 +15,19 @@ const userSchema = new Schema({
         type: Boolean,
         required: true,
         default: false
-    }
-}, {timestamps: true})
+    },
+   otp: {
+    type: String,
+    default: null
+   },
+   otpExpiration: {
+    type: Date,
+    default: null
+   },
+   otpVerified: {
+    type: Boolean,
+    default: null
+   }
+},)
 
 module.exports = mongoose.model('User', userSchema)
