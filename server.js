@@ -5,7 +5,8 @@ const cookieParser = require("cookie-parser");
 const connectDB = require("./config/db");
 const corsOptions = require('./config/corsList')
 const userRoutes = require('./routes/userRoutes')
-  
+const sessionR = require('./routes/sessionRoutes')
+const setRoutes = require('./routes/setRoutes')
 
 
 const app = express();
@@ -20,6 +21,8 @@ connectDB()
 
 //Routes
 app.use('/i-one/user', userRoutes)
+app.use('/i-one/sessionr', sessionR)
+app.use('/i-one/set', setRoutes)
 
   app.listen(process.env.PORT, () => {
     console.log(`server Started and listening on ${process.env.PORT}`);
