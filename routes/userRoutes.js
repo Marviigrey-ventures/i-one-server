@@ -24,8 +24,4 @@ router.route('/resetPassword')
         .post(resetPassword)
 
 
-<<<<<<< HEAD
 module.exports = router
-=======
-module.exports = router
->>>>>>> upstream/master
