@@ -6,9 +6,9 @@ const crypto = require("crypto");
 const sendMail = require("../utils/sendEmail");
 
 const registerUser = async (req, res) => {
-  const { email, nickname, password, isOwner, address, location, position } = req.body;
+  const { email, nickname, password, isOwner, address, location, position, phoneNumber } = req.body;
 
-  if (!email || !password || !nickname || !address || !location || position)
+  if (!email || !password || !nickname || !address || !location || position || phoneNumber)
     return res.status(400).json({ message: "all fields must be filled" });
 
   if (!isOWner)
@@ -40,7 +40,8 @@ const registerUser = async (req, res) => {
       isOwner,
       address,
       location,
-      position
+      position,
+      phoneNumber
     });
 
     createToken(res, newUser._id);
