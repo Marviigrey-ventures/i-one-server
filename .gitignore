@@ -1,2 +1,7 @@
 node_modules
 .env
+randomCordinates.js
+renameField.js
+addFields.js
+
+

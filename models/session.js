@@ -4,9 +4,10 @@ const Schema = mongoose.Schema;
 
 const sessionSchema = new Schema({
   location: {
-    type: String,
-    required: true,
+    type: mongoose.Types.ObjectId,
+    ref: "Location", 
   },
+
   playersPerTeam: {
     type: Number,
     default: 0,
@@ -29,7 +30,7 @@ const sessionSchema = new Schema({
   },
   stopTime: {
     type: Date,
-    default: null
+    default: null,
   },
   winningDecider: {
     type: String,
@@ -53,16 +54,14 @@ const sessionSchema = new Schema({
       ref: "User",
     },
   ],
- maxNumber: {
-  type: Number,
-  default: 0
- },
+  maxNumber: {
+    type: Number,
+    default: 0,
+  },
   isFull: {
     type: Boolean,
     default: false,
   },
 });
-
-
 
 module.exports = mongoose.model("Session", sessionSchema);

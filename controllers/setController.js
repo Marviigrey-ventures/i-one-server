@@ -112,8 +112,20 @@ const viewAllSets = async (req, res) => {
     res.status(200).json(sets);
   } catch (err) {
     res.status(500).json({ message: "Internal server error" });
-    console.log(err.message)
+    console.log(err.message);
   }
 };
 
-module.exports = { createSet, viewAllSets };
+const viewSetForSession = async (req, res) => {
+  try {
+    const { sessionid } = req.params;
+
+    const sets = await Set.find({ session: sessionid });
+
+     res.status(200).json(sets);
+  } catch (error) {
+    res.status(500).json({ message: "Internal Server error" });
+    console.log(error);
+  }
+};
+module.exports = { createSet, viewAllSets, viewSetForSession };

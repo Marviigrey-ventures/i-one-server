@@ -3,11 +3,19 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const userSchema = new Schema({
+  firstname: {
+    type: String,
+    required: true,
+  },
+  lastname: {
+    type: String,
+    required: true,
+  },
   email: {
     type: String,
     required: true,
   },
-  username: {
+  nickname: {
     type: String,
     required: true,
   },
@@ -15,7 +23,36 @@ const userSchema = new Schema({
     type: String,
     required: true,
   },
+  address: {
+    type: String,
+    required: true,
+  },
+  location: {
+    type: {
+      type: String,
+      enum: ["Point"],
+      default: "Point",
+    },
+    coordinates: {
+      type: [Number],
+      required: true,
+    },
+  },
+  phoneNumber: {
+    type: String,
+    required: true,
+  },
+
+  position: {
+    type: String,
+    required: true,
+  },
   isAdmin: {
+    type: Boolean,
+    required: true,
+    default: false,
+  },
+  isOwner: {
     type: Boolean,
     required: true,
     default: false,
@@ -27,7 +64,7 @@ const userSchema = new Schema({
   currentSession: {
     type: mongoose.Types.ObjectId,
     default: null,
-    ref: "Session"
+    ref: "Session",
   },
   otp: {
     type: Number,
