@@ -6,10 +6,16 @@ const crypto = require("crypto");
 const sendMail = require("../utils/sendEmail");
 
 const registerUser = async (req, res) => {
-  const { email, username, password } = req.body;
+  const { email, nickname, password, isOwner, address, location, position } = req.body;
 
-  if (!email || !password || !username)
+  if (!email || !password || !nickname || !address || !location || position)
     return res.status(400).json({ message: "all fields must be filled" });
+
+  if (!isOWner)
+    return res.status(400).json({ message: "Specify your role as a user" });
+
+  
+
 
   const isEmail = validator.isEmail(email);
   if (!isEmail) return res.status(400).json({ message: "invalid Email" });
@@ -18,9 +24,10 @@ const registerUser = async (req, res) => {
   if (userEmailExists)
     return res.status(409).json({ message: "email already in use" });
 
-  const usernameExists = await User.findOne({username})
+  const nicknameExists = await User.findOne({ nickname });
 
-  if(usernameExists) res.status(400).json({message:"Username already in use" })
+  if (nicknameExists)
+    res.status(400).json({ message: "Nickname already in use" });
 
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
@@ -28,14 +35,19 @@ const registerUser = async (req, res) => {
   try {
     const newUser = await User.create({
       email,
-      username,
+      nickname,
       password: hashedPassword,
+      isOwner,
+      address,
+      location,
+      position
     });
 
     createToken(res, newUser._id);
     res.status(201).json({
       email: newUser.email,
-      username: newUser.username,
+      nickname: newUser.nickname,
+      id: newUser._id,
       isAdmin: newUser.isAdmin,
     });
   } catch (err) {
@@ -59,7 +71,7 @@ const authUser = async (req, res) => {
 
   try {
     createToken(res, user._id);
-    res.json({
+    res.status(200).json({
       email: user.email,
       isAdmin: user.isAdmin,
       id: user._id,
@@ -81,7 +93,7 @@ const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
 
-    if (!email) return res.status(400).json({message: "Input Email"})
+    if (!email) return res.status(400).json({ message: "Input Email" });
 
     //get user based on email
     const user = await User.findOne({ email });
@@ -142,29 +154,27 @@ const resetPassword = async (req, res) => {
     if (!user.otpVerified)
       return res.status(401).json({ message: "OTP not verified" });
 
-      //check if passwords match
-        if (newPassword !== confirmPassword) return res.status(401).json({message: "Passwords do not match"})
+    //check if passwords match
+    if (newPassword !== confirmPassword)
+      return res.status(401).json({ message: "Passwords do not match" });
 
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.otp = null;
+    user.otpExpiration = null;
+    user.otpVerified = false;
+    await user.save();
 
-            user.password = await bcrypt.hash(newPassword, 10)
-            user.otp = null
-            user.otpExpiration = null;
-            user.otpVerified = false;
-            await user.save()
-
-
-            res.status(200).json({message: 'Password reset Successful'})
-  }catch (err) {
+    res.status(200).json({ message: "Password reset Successful" });
+  } catch (err) {
     res.status(500).json({ message: "Internal Server error" });
   }
 };
 
-const testsession = async (req, res) =>{
-  const user = await User.find({})
+const testsession = async (req, res) => {
+  const user = await User.find({});
 
-  res.status(200).json(user)
-}
-
+  res.status(200).json(user);
+};
 
 module.exports = {
   registerUser,
@@ -173,5 +183,5 @@ module.exports = {
   forgotPassword,
   verifyOtp,
   resetPassword,
-  testsession
+  testsession,
 };

@@ -5,6 +5,7 @@ const Schema = mongoose.Schema
 const setSchema = new Schema({
     session: {
         type: mongoose.Types.ObjectId,
+        ref: "Session",
         required: true
 
     },

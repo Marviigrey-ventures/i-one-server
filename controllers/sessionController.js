@@ -1,6 +1,10 @@
 const User = require("../models/userModel");
 const Session = require("../models/session");
 
+const findNearbySession = (req, res) => {
+  res.send("hell0");
+};
+
 const startSession = async (req, res) => {
   try {
     const userid = req.user._id;
@@ -68,11 +72,11 @@ const createSession = async (req, res) => {
     const session = await Session.findById(sessionid)
       .populate({
         path: "members",
-        select: "username -_id",
+        select: "nickname -_id",
       })
       .populate({
         path: "captain",
-        select: "username -_id",
+        select: "nickname -_id",
       });
 
     if (!session) return res.status(404).json({ message: "Session not founf" });
@@ -143,11 +147,11 @@ const viewSessionById = async (req, res) => {
     const session = await Session.findById(sessionid)
       .populate({
         path: "members",
-        select: "username -_id",
+        select: "nickname -_id",
       })
       .populate({
         path: "captain",
-        select: "username -_id",
+        select: "nickname -_id",
       });
 
     res.status(200).json(session);
@@ -168,7 +172,7 @@ const joinSession = async (req, res) => {
     // Find the session by ID and populate necessary fields
     const session = await Session.findById(sessionid).populate({
       path: "captain",
-      select: "username -_id",
+      select: "nickname -_id",
     });
 
     if (!session) {
@@ -224,14 +228,14 @@ const joinSession = async (req, res) => {
 };
 
 const viewAllSessions = async (req, res) => {
-  const sessions = await Session.find({})
+  const sessions = await Session.find({ finished: false })
     .populate({
       path: "captain",
-      select: "username -_id",
+      select: "nickname -_id",
     })
     .populate({
       path: "members",
-      select: "username -_id",
+      select: "nickname -_id",
     });
 
   res.status(200).json(sessions);
@@ -278,18 +282,20 @@ const leaveSession = async (req, res) => {
 const viewSessionMembers = async (req, res) => {
   try {
     const { sessionid } = req.params;
-    const session = await Session.findById(sessionid).populate("members");
+    const session = await Session.findById(sessionid).populate({
+      path: "members",
+      select: "nickname -_id"
+    });
 
     if (!session) return res.status(404).json({ message: "Session not found" });
 
     if (!session.members || session.members.length === 0)
       return res.status(404).json({ message: "no members have joined yet" });
 
-    const memberNames = session.members.map((member) => ({
-      username: member.username,
-    }));
 
-    res.status(200).json(memberNames);
+ const nicknamess = session.members.map(member => (member.nickname || "Uknown"))
+    
+    res.status(200).json(nicknamess);
   } catch (err) {
     res.status(500).json({ message: err.message });
     console.log(err);
@@ -355,7 +361,7 @@ const rescheduleSession = async (req, res) => {
       return res.status(409).json({ message: "Session Time already exist" });
 
     const overlappingSchedule = await Session.findOne({
-      _id: { $ne: sessionid }, 
+      _id: { $ne: sessionid },
       startTime: { $lt: new Date(addedStopTime) },
       stopTime: { $gt: new Date(startTime) },
     });
@@ -390,4 +396,5 @@ module.exports = {
   leaveSession,
   deleteSession,
   rescheduleSession,
+  findNearbySession,
 };

@@ -3,6 +3,8 @@ require("dotenv").config();
 const User = require("../models/userModel");
 
 const authenticate = async (req, res, next) => {
+console.log("wagwan")
+
   let token;
 
   // Read JWT from the 'jwt' cookie
@@ -23,4 +25,16 @@ const authenticate = async (req, res, next) => {
   }
 };
 
-module.exports = { authenticate };
+
+//authorizing owner
+
+const authorizeOwner = (req, res, next) =>{
+  if(req.user && req.user.isOwner){
+    console.log("user is an owner")
+    next()}else{
+    res.status(401).json({ message: "Not an authorised owner" });
+  }
+}
+
+
+module.exports = { authenticate, authorizeOwner };

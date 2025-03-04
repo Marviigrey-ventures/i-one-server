@@ -13,7 +13,12 @@ const {
   rescheduleSession,
   findNearbySession
 } = require("../controllers/sessionController");
+
+
 const { authenticate } = require("../middleware/authUser");
+
+router.route('/nearbysession').get(authenticate, findNearbySession)
+
 
 router.get("/viewallsessions", authenticate, viewAllSessions);
 
@@ -27,9 +32,7 @@ router.route("/:sessionid").get(authenticate, viewSessionById);
 
 router.route("/:sessionid/leavesession").delete(authenticate, leaveSession);
 
-router
-  .route("/:sessionid/viewsessionmembers")
-  .get(authenticate, viewSessionMembers);
+router.route("/:sessionid/viewsessionmembers").get(authenticate, viewSessionMembers);
 
 router.route("/endsession").post(authenticate, endSession);
 
