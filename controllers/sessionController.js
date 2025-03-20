@@ -1,14 +1,59 @@
+const mongoose = require("mongoose");
 const User = require("../models/userModel");
 const Session = require("../models/session");
+const Location = require("../models/Locations");
+const Match = require("../models/matches");
 
-const findNearbySession = (req, res) => {
-  res.send("hell0");
+const findNearbySessionMatches = async (req, res) => {
+  try {
+    const { longitude, latitude } = req.body;
+
+    if (!longitude || !latitude)
+      return res
+        .status(404)
+        .json({ message: "Location Paramneters not complete" });
+
+    const nearbyLocations = await Location.find({
+      "location.coordinates": {
+        $near: {
+          $geometry: {
+            type: "Point",
+            coordinates: [parseFloat(longitude), parseFloat(latitude)],
+          },
+          $maxDistance: 5000,
+        },
+      },
+    });
+
+    const locationIdArray = nearbyLocations.map((location) => location._id);
+
+    const locatedSessions = await Session.find({
+      location: { $in: locationIdArray },
+    });
+
+    const locatedSessionsId = locatedSessions.map((session) => session._id);
+
+    const matches = await Match.find({
+      session: { $in: locatedSessionsId },
+    })
+      .populate("teamOne")
+      .populate("teamTwo");
+
+    res.status(200).json(matches);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };
 
 const startSession = async (req, res) => {
   try {
     const userid = req.user._id;
-    const { location } = req.body;
+    const { locationid } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(locationid))
+      return res.status(400).json({ message: "Object is not valid" });
+
+    if (!locationid) return res.status(404).json({ message: "id is rquired" });
 
     const user = await User.findById(userid);
 
@@ -16,7 +61,7 @@ const startSession = async (req, res) => {
 
     await user.save();
 
-    const session = await Session.create({ location, captain: userid });
+    const session = await Session.create({ locationid, captain: userid });
 
     user.currentSession = session._id;
     await user.save();
@@ -28,18 +73,31 @@ const startSession = async (req, res) => {
 };
 
 const endSession = async (req, res) => {
-  const userid = req.user._id;
+  const { sessionid } = req.params;
 
-  const user = await User.findById(userid);
+  const session = await Session.findById(sessionid);
 
-  if (!user.isCaptain)
-    res.status(401).json({ message: "You are not a captain" });
+  if (!session) return res.status(404).json({ message: "session not found" });
 
-  user.isCaptain = false;
+  const members = session.members;
+  session.captain = null;
+  session.inProgress = false;
+  await Promise.all(
+    members.map(async (memberid) => {
+      const user = await User.findById(memberid);
+      if (user) {
+        user.currentSession = null;
+        user.isCaptain = false;
+        await user.save();
+      } else {
+        res.status(409).json({ message: "User not found" });
+      }
+    })
+  );
 
-  await user.save();
+  await Session.save();
 
-  res.status(201).json({ message: "Session Ended" });
+  res.status(201).json({ message: "Session Ended" }, session);
 };
 
 const kickOff = async (req, res) => {
@@ -69,17 +127,9 @@ const createSession = async (req, res) => {
     } = req.body;
 
     const user = await User.findById(userid);
-    const session = await Session.findById(sessionid)
-      .populate({
-        path: "members",
-        select: "nickname -_id",
-      })
-      .populate({
-        path: "captain",
-        select: "nickname -_id",
-      });
+    const session = await Session.findById(sessionid);
 
-    if (!session) return res.status(404).json({ message: "Session not founf" });
+    if (!session) return res.status(404).json({ message: "Session not found" });
 
     if (!user.isCaptain)
       return res.status(401).json({ message: "you are not a captain" });
@@ -220,7 +270,9 @@ const joinSession = async (req, res) => {
     user.currentSession = updatedSession._id;
     await user.save();
 
-    res.status(201).json({ message: "User successfully joined session" });
+    res
+      .status(201)
+      .json({ message: "User successfully joined session", updatedSession });
   } catch (err) {
     console.error("Error in joinSession:", err);
     res.status(500).json({ message: err.message });
@@ -228,17 +280,20 @@ const joinSession = async (req, res) => {
 };
 
 const viewAllSessions = async (req, res) => {
-  const sessions = await Session.find({ finished: false })
-    .populate({
-      path: "captain",
-      select: "nickname -_id",
-    })
-    .populate({
-      path: "members",
-      select: "nickname -_id",
-    });
+  try {
+    const sessions = await Session.find({ finished: false })
+      .populate({
+        path: "captain",
+      })
+      .populate({
+        path: "members",
+      })
+      .populate("location");
 
-  res.status(200).json(sessions);
+    res.status(200).json(sessions);
+  } catch (err) {
+    res.status(500).json({ message: "Internal server error" });
+  }
 };
 
 const leaveSession = async (req, res) => {
@@ -284,7 +339,7 @@ const viewSessionMembers = async (req, res) => {
     const { sessionid } = req.params;
     const session = await Session.findById(sessionid).populate({
       path: "members",
-      select: "nickname -_id"
+      select: "nickname -_id",
     });
 
     if (!session) return res.status(404).json({ message: "Session not found" });
@@ -292,9 +347,10 @@ const viewSessionMembers = async (req, res) => {
     if (!session.members || session.members.length === 0)
       return res.status(404).json({ message: "no members have joined yet" });
 
+    const nicknamess = session.members.map(
+      (member) => member.nickname || "Uknown"
+    );
 
- const nicknamess = session.members.map(member => (member.nickname || "Uknown"))
-    
     res.status(200).json(nicknamess);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -396,5 +452,5 @@ module.exports = {
   leaveSession,
   deleteSession,
   rescheduleSession,
-  findNearbySession,
+  findNearbySessionMatches,
 };

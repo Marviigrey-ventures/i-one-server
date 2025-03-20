@@ -20,24 +20,31 @@ const userSchema = new Schema({
     required: true,
   },
   password: {
-    type: String,
+    type: String, 
     required: true,
   },
   address: {
     type: String,
     required: true,
   },
-  location: {
-    type: {
+  locationInfo: {
+    address: {
       type: String,
-      enum: ["Point"],
-      default: "Point",
-    },
-    coordinates: {
-      type: [Number],
       required: true,
     },
+    location: {
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: "Point",
+      },
+      coordinates: {
+        type: [Number],
+        required: true,
+      },
+    },
   },
+
   phoneNumber: {
     type: String,
     required: true,
