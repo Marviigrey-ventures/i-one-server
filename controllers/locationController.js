@@ -1,4 +1,5 @@
 const Location = require("../models/Locations");
+const User = require("../models/userModel");
 
 const registerLocation = async (req, res) => {
   try {
@@ -45,7 +46,7 @@ const viewNearbyLocations = async (req, res) => {
   try {
     const { longitude, latitude, maxDistance } = req.body;
 
-    if (!longitude || !latitude || !maxDistance)
+    if (!longitude || !latitude)
       return res
         .status(404)
         .json({ message: "Location Paramneters not complete" });
@@ -57,7 +58,7 @@ const viewNearbyLocations = async (req, res) => {
             type: "Point",
             coordinates: [parseFloat(longitude), parseFloat(latitude)],
           },
-          $maxDistance: parseFloat(maxDistance) || 5000,
+          $maxDistance: 5000,
         },
       },
     });
@@ -67,4 +68,28 @@ const viewNearbyLocations = async (req, res) => {
   }
 };
 
-module.exports = { registerLocation, viewAllLocations, viewNearbyLocations };
+const getMyLocation = async (req, res) => {
+  try {
+    const userid = req.user._id;
+
+    const user = await User.findById(userid);
+
+    if (!user) res.status(404).json({ message: "User not found" });
+
+    const location = user.locationInfo;
+    const address = user.locationInfo.address;
+    const coordinates = user.locationInfo.location.coordinates;
+
+    res.status(200).json({ locationInfo: location, address, coordinates });
+  } catch (err) {
+    res.status(500).json({ message: "internal server error" });
+    console.log(err);
+  }
+};
+
+module.exports = {
+  registerLocation,
+  viewAllLocations,
+  viewNearbyLocations,
+  getMyLocation,
+};

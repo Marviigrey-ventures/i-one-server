@@ -13,6 +13,21 @@ const matchSchema = new Schema({
     required: true,
     ref: "Set",
   },
+  teamOneScore: {
+    type: Number,
+    default: 0,
+    required: true
+   
+  },
+  teamTwoScore: {
+    type: Number,
+    default: 0,
+    required: true
+  },
+  isStarted: {
+    type: Boolean,
+    default: false
+  },
   session: {
     type: mongoose.Types.ObjectId,
     required: true,

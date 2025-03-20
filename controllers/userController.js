@@ -172,7 +172,7 @@ const resetPassword = async (req, res) => {
 };
 
 const testsession = async (req, res) => {
-  const user = await User.find({});
+  const user = await User.find({}).sort({createdAt: -1});
 
   res.status(200).json(user);
 };

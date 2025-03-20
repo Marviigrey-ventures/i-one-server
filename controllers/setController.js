@@ -104,10 +104,7 @@ const createSet = async (req, res) => {
 
 const viewAllSets = async (req, res) => {
   try {
-    const sets = await Set.find({}).populate({
-      path: "players",
-      select: "username -_id",
-    });
+    const sets = await Set.find({}).populate('players');
 
     res.status(200).json(sets);
   } catch (err) {
@@ -120,12 +117,25 @@ const viewSetForSession = async (req, res) => {
   try {
     const { sessionid } = req.params;
 
-    const sets = await Set.find({ session: sessionid });
+    const sets = await Set.find({ session: sessionid }).populate("players");
 
-     res.status(200).json(sets);
+    res.status(200).json(sets);
   } catch (error) {
     res.status(500).json({ message: "Internal Server error" });
     console.log(error);
   }
 };
-module.exports = { createSet, viewAllSets, viewSetForSession };
+
+const viewSingleSet = async (req, res) => {
+  try {
+    const { setid } = req.params;
+    const set = await Set.findById(setid).populate("players");
+    if (!set) return res.status(404).json({ message: "Set not found" });
+
+    res.status(200).json(set);
+  } catch (err) {
+    res.status(500).json({ message: "Internal server error" });
+    console.log(err);
+  }
+};
+module.exports = { createSet, viewAllSets, viewSetForSession, viewSingleSet };

@@ -64,6 +64,7 @@ const matchUp = async (req, res) => {
     res.status(500).json({ message: "Internal Server error" });
     console.log(error);
   }
+  jn;
 };
 
 const viewSessionMatchUps = async (req, res) => {
@@ -92,4 +93,99 @@ const viewSessionMatchUps = async (req, res) => {
   }
 };
 
-module.exports = { matchUp, viewSessionMatchUps };
+const startMatchInSession = async (req, res) => {
+  try {
+    const { matchid } = req.params;
+
+    const match = await Match.findById(matchid)
+      .populate({
+        path: "teamOne",
+      })
+      .populate({
+        path: "teamTwo",
+      });
+
+    if (!match) return res.status(404).json({ message: "Match not found" });
+
+    match.isStarted = true;
+
+    await match.save();
+
+    const matchDetails = {
+      teamOne: match.teamOne.name,
+      teamTwo: match.teamTwo.name,
+    };
+
+    res.status(200).json({
+      message: `${matchDetails.teamOne} vs ${matchDetails.teamTwo} is underway`,
+      match,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Internal Server Error" });
+    console.log(err);
+  }
+};
+
+const endMatchInSession = async (req, res) => {
+  try {
+    const { matchid } = req.params;
+
+    const match = await Match.findById(matchid)
+      .populate({
+        path: "teamOne",
+      })
+      .populate({
+        path: "teamTwo",
+      });
+
+    if (!match) return res.status(404).json({ message: "Match not found" });
+
+    match.isStarted = false;
+
+    await match.save();
+
+    const matchDetails = {
+      teamOne: match.teamOne.name,
+      teamTwo: match.teamTwo.name,
+      teamOneScore: match.teamOneScore,
+      teamTwoScore: match.teamTwoScore,
+    };
+
+    res.status(200).json({
+      message: ` Final Score- ${matchDetails.teamOne}:${matchDetails.teamOneScore} vs ${matchDetails.teamTwo}:${matchDetails.teamTwoScore}`,
+      match,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Internal Server Error" });
+    console.log(err);
+  }
+};
+
+const viewMatchDetails = async (req, res) => {
+  try {
+    const { matchid } = req.params;
+
+    const match = await Match.findById(matchid)
+      .populate({
+        path: "teamOne",
+      })
+      .populate({
+        path: "teamTwo",
+      });
+
+    if (!match) req.status(404).json({ message: "Match Not found" });
+
+    res.status(200).json(match);
+  } catch (err) {
+    res.status(500).json({ message: "Internal Server Error" });
+    console.log(err);
+  }
+};
+
+module.exports = {
+  matchUp,
+  viewSessionMatchUps,
+  startMatchInSession,
+  viewMatchDetails,
+  endMatchInSession,
+};
