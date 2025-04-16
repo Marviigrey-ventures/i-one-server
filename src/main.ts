@@ -9,7 +9,7 @@ async function bootstrap() {
   const httpAdapter = app.get(HttpAdapterHost);
 
   app.use(cookieParser());
-  
+
   app.useGlobalFilters(new GlobalExceptionFilter(httpAdapter));
   app.setGlobalPrefix('api/v1');
   await app.listen(3000);

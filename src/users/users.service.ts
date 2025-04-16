@@ -23,7 +23,7 @@ export class UsersService {
         phoneNumber,
         address,
         position,
-        locationInfo
+        location
     }: registerUserRequest) {
         const formattedPhone = internationalisePhoneNumber(phoneNumber)
         await this.checkExistingUser(phoneNumber, email, nickname)
@@ -35,7 +35,7 @@ export class UsersService {
             address,
             lastName,
             firstName,
-            locationInfo,
+            location,
             position
           }
           try {

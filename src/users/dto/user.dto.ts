@@ -1,26 +1,7 @@
+import { LocationCoordinates } from "@app/common";
 import { Type } from "class-transformer";
 import { IsString, IsEmail, IsNotEmpty, IsPhoneNumber, isEnum, IsEnum, IsArray, ArrayMinSize, IsNumber, ValidateNested, MinLength } from "class-validator";
 
-class Location {
-  @IsEnum(["Point"], { message: "Location type must be 'Point' "})
-  type: "Point";
-
-  @IsArray()
-  @ArrayMinSize(2)
-  @IsNumber({}, { each: true})
-  coordinates: number[]
-}
-
-// Redundant
-class LocationInfo {
-  @IsString()
-  @IsNotEmpty()
-  address: string
-
-  @ValidateNested()
-  @Type(() => Location)
-  location: Location
-}
 
 export class registerUserRequest {
   @IsString()
@@ -56,9 +37,8 @@ export class registerUserRequest {
   @IsNotEmpty()
   position: string;
 
-  @ValidateNested()
-  @Type(() => LocationInfo)
-  locationInfo: LocationInfo
+  @IsNotEmpty()
+  location: LocationCoordinates
 }
 
 export class ForgotPasswordDto {
