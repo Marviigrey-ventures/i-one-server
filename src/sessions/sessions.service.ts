@@ -3,8 +3,9 @@ import { SessionRepository } from '../sessions/sessions.repository';
 import { LocationRepository } from '../locations/locations.repository';
 import { MatchRepository } from '../matches/matches.repository';
 import { UserRepository } from '../users/users.repository';
-import { CustomHttpException, Session, User } from '@app/common';
+import { CustomHttpException, Session, SessionI, User } from '@app/common';
 import { UpdateQuery } from 'mongoose';
+import { createSessionRequest } from './dto/sessions.dto';
 
 @Injectable()
 export class SessionsService {
@@ -57,6 +58,74 @@ export class SessionsService {
 		)
 		
 		return session;
+	}
+
+	async createSession({
+		setNumber,
+		playersPerTeam,
+		timeDuration,
+		minsPerSet,
+		startTime,
+		winningDecider
+	}: createSessionRequest, userId: string, sessionId: string) {
+		const user: User = await this.userRepository.findOne({ _id: userId })
+
+		const session = await this.sessionRepository.findOne({ _id: sessionId})
+		if (session === null){
+			throw new CustomHttpException(
+				"Session does not exist",
+				HttpStatus.NOT_FOUND
+			)
+		}
+
+		if (!user.isCaptain) {
+			throw new CustomHttpException(
+				"You are not a captain",
+				HttpStatus.UNAUTHORIZED
+			)
+		}
+
+		const addedStopTime = new Date(new Date(startTime).getTime() + timeDuration * 60000)
+
+		const existingSchedule = await this.sessionRepository.findOne({
+			startTime,
+			stopTime: addedStopTime
+		})
+
+		if (existingSchedule !== null){
+			throw new CustomHttpException(
+				"Session Time already exists",
+				HttpStatus.CONFLICT
+			)
+		}
+
+		const overlappingSchedule = await this.sessionRepository.findOne({
+			startTime: { $lt: new Date(addedStopTime) },
+			stopTime: { $gt: new Date(startTime)}
+		})
+
+		if (overlappingSchedule !== null){
+			throw new CustomHttpException(
+				"This session overlaps with another session",
+				HttpStatus.CONFLICT
+			)
+		}
+
+		const maxNumber = playersPerTeam * setNumber;
+
+		const newSession = await this.sessionRepository.findOneAndUpdate({
+			_id: sessionId
+		}, {
+			setNumber,
+			playersPerTeam,
+			minsPerSet,
+			startTime,
+			stopTime: addedStopTime,
+			winningDecider,
+			maxNumber
+		})
+
+		return newSession
 	}
 	
 	async endSession(sessionId: string) {
@@ -138,13 +207,59 @@ export class SessionsService {
 		}
 	  }
 
+		async viewSessionMembers(sessionId: string){
+			const session: SessionI = await this.sessionRepository.findOneAndPopulate({
+				_id: sessionId
+			}, ['members'])
+
+			if (session === null) {
+				throw new CustomHttpException(
+					"Session not found",
+					HttpStatus.NOT_FOUND
+				)
+			}
+
+			if (!session.members || session.members.length === 0){
+				throw new CustomHttpException(
+					"No members have joined yet",
+					HttpStatus.NOT_FOUND
+				)
+			}
+
+			const nicknames = session.members.map((member) => member.nickname)
+			return nicknames
+		} 
+
+		async viewSession(sessionId: string) {
+			const verifySession = await this.sessionRepository.findOne({
+				_id: sessionId
+			})
+
+			if (sessionId === null){
+				throw new CustomHttpException(
+					"Session does not exist",
+					HttpStatus.NOT_FOUND
+				)
+			}
+
+			return await this.sessionRepository.findRaw().findOne({
+				_id: sessionId
+			}).populate({
+				path: 'members',
+				select: "nickname -_id"
+			}).populate({
+				path: "members",
+				select: "nickname -_id"
+			})
+		}
+
 	  async viewAllSessions() {
 		return this.sessionRepository.findAndPopulate(
 			{ finished: false },
 			['captain', 'members', 'location']
 		)
 	  }
-	
+
 	  async deleteSession(sessionId: string) {
 		const session: Session = await this.sessionRepository.findOne({ _id: sessionId });
 		if (!session) throw new CustomHttpException('Session not found', HttpStatus.NOT_FOUND);
