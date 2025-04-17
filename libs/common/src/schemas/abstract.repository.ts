@@ -116,7 +116,7 @@ export abstract class AbstractRepository<TDocument extends AbstractDocument> {
     documents: Array<Omit<TDocument, '_id'>> | Array<Partial<TDocument>>,
     options?: SaveOptions,
   ): Promise<any> {
-    return await this.model.insertMany(documents);
+    return await this.model.insertMany(documents, options);
   }
 
   async find(filterQuery: FilterQuery<TDocument>): Promise<any> {
@@ -138,14 +138,14 @@ export abstract class AbstractRepository<TDocument extends AbstractDocument> {
     );
   }
 
-async updateMany(
-  filterQuery: FilterQuery<TDocument>,
-  update: Partial<TDocument>,
-): Promise<any> {
-  return await new Promise((resolve) =>
-    resolve(this.model.updateMany(filterQuery, update, { new: true })),
-  );
-}
+  async updateMany(
+    filterQuery: FilterQuery<TDocument>,
+    update: Partial<TDocument>,
+  ): Promise<any> {
+    return await new Promise((resolve) =>
+      resolve(this.model.updateMany(filterQuery, update, { new: true })),
+    );
+  }
 
   async findAndUpdate(
     filterQuery: FilterQuery<TDocument>,

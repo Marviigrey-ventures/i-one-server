@@ -1,7 +1,12 @@
-import { LocationCoordinates } from "@app/common";
-import { Type } from "class-transformer";
-import { IsString, IsEmail, IsNotEmpty, IsPhoneNumber, isEnum, IsEnum, IsArray, ArrayMinSize, IsNumber, ValidateNested, MinLength } from "class-validator";
-
+import { LocationCoordinates } from '@app/common';
+import {
+  IsString,
+  IsEmail,
+  IsNotEmpty,
+  IsPhoneNumber,
+  IsNumber,
+  MinLength,
+} from 'class-validator';
 
 export class registerUserRequest {
   @IsString()
@@ -38,7 +43,7 @@ export class registerUserRequest {
   position: string;
 
   @IsNotEmpty()
-  location: LocationCoordinates
+  location: LocationCoordinates;
 }
 
 export class ForgotPasswordDto {
@@ -57,15 +62,13 @@ export class VerifyOtpDto {
   otp: number;
 }
 
-
-
 export class ResetPasswordDto {
-  @IsEmail({}, { message: "Invalid email format" })
+  @IsEmail({}, { message: 'Invalid email format' })
   @IsNotEmpty()
   email: string;
 
   @IsNotEmpty()
-  @MinLength(6, { message: "Password must be at least 6 characters long" })
+  @MinLength(6, { message: 'Password must be at least 6 characters long' })
   newPassword: string;
 
   @IsNotEmpty()

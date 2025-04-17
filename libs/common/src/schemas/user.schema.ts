@@ -1,9 +1,9 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Types } from "mongoose";
-import { AbstractDocument } from "./abstract.schema";
-import { LocationCoordinates } from "../types/common";
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Types } from 'mongoose';
+import { AbstractDocument } from './abstract.schema';
+import { LocationCoordinates } from '../types/common';
 
-@Schema({ timestamps: true }) 
+@Schema({ timestamps: true })
 export class User extends AbstractDocument {
   @Prop(String)
   firstName: string;
@@ -32,7 +32,7 @@ export class User extends AbstractDocument {
   @Prop({ default: false })
   isCaptain: boolean;
 
-  @Prop({ type: Types.ObjectId, ref: "Session", default: null })
+  @Prop({ type: Types.ObjectId, ref: 'Session', default: null })
   currentSession: string;
 
   @Prop({ type: Number, default: null })
@@ -47,14 +47,14 @@ export class User extends AbstractDocument {
   @Prop({
     type: {
       type: String,
-      default: 'Point'
+      default: 'Point',
     },
     coordinates: {
       type: [Number],
-      default: [0, 0]
-    }
+      default: [0, 0],
+    },
   })
-    location: LocationCoordinates
+  location: LocationCoordinates;
 }
 export const UserSchema = SchemaFactory.createForClass(User);
-UserSchema.index({ location: '2dsphere' })
+UserSchema.index({ location: '2dsphere' });

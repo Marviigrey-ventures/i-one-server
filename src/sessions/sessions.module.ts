@@ -1,4 +1,13 @@
-import { Location, LocationSchema, Match, MatchSchema, Session, SessionSchema, User, UserSchema } from '@app/common';
+import {
+  Location,
+  LocationSchema,
+  Match,
+  MatchSchema,
+  Session,
+  SessionSchema,
+  User,
+  UserSchema,
+} from '@app/common';
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { SessionsService } from './sessions.service';
@@ -9,22 +18,22 @@ import { MatchRepository } from 'src/matches/matches.repository';
 import { SessionRepository } from './sessions.repository';
 
 @Module({
-	imports: [
-		MongooseModule.forFeature([
-			{ name: Session.name, schema: SessionSchema },
-			{ name: User.name, schema: UserSchema },
-			{ name: Location.name, schema: LocationSchema },
-			{ name: Match.name, schema: MatchSchema },
-		])
-	],
-	controllers: [SessionsController],
-	providers: [
-		SessionsService,
-		SessionRepository,
-		UserRepository,
-		LocationRepository,
-		MatchRepository,
-	],
-	exports: [SessionsService]
+  imports: [
+    MongooseModule.forFeature([
+      { name: Session.name, schema: SessionSchema },
+      { name: User.name, schema: UserSchema },
+      { name: Location.name, schema: LocationSchema },
+      { name: Match.name, schema: MatchSchema },
+    ]),
+  ],
+  controllers: [SessionsController],
+  providers: [
+    SessionsService,
+    SessionRepository,
+    UserRepository,
+    LocationRepository,
+    MatchRepository,
+  ],
+  exports: [SessionsService],
 })
 export class SessionsModule {}

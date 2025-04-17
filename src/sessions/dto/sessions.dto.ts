@@ -1,28 +1,27 @@
-import { IsNotEmpty, IsNumber } from "class-validator";
-
+import { IsNotEmpty, IsNumber } from 'class-validator';
 
 export class createSessionRequest {
   @IsNotEmpty()
   @IsNumber()
-  setNumber: number
+  setNumber: number;
 
   @IsNotEmpty()
   @IsNumber()
-  playersPerTeam: number
+  playersPerTeam: number;
 
   @IsNotEmpty()
   @IsNumber()
-  timeDuration: number
+  timeDuration: number;
 
   @IsNotEmpty()
   @IsNumber()
-  minsPerSet: number
+  minsPerSet: number;
 
   @IsNotEmpty()
   @IsNumber()
-  startTime: number
+  startTime: number;
 
   @IsNotEmpty()
   @IsNumber()
-  winningDecider: number
+  winningDecider: number;
 }

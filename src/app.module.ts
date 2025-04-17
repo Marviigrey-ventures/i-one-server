@@ -32,10 +32,10 @@ import { LocationsModule } from './locations/locations.module';
     DatabaseModule,
     AuthModule,
     UsersModule,
-    SetsModule,
     SessionsModule,
+    SetsModule,
     MatchesModule,
-    LocationsModule
+    LocationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

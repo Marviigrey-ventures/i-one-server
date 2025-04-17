@@ -4,22 +4,22 @@ import { AbstractDocument } from './abstract.schema';
 
 @Schema({ timestamps: true })
 export class Match extends AbstractDocument {
-  @Prop({ type: Types.ObjectId, ref: 'Set'})
+  @Prop({ type: Types.ObjectId, ref: 'Set' })
   teamOne: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'Set'})
+  @Prop({ type: Types.ObjectId, ref: 'Set' })
   teamTwo: string;
 
-  @Prop({ type: Number, default: 0})
+  @Prop({ type: Number, default: 0 })
   teamOneScore: number;
 
-  @Prop({ type: Number, default: 0})
+  @Prop({ type: Number, default: 0 })
   teamTwoScore: number;
 
   @Prop({ type: Boolean, default: false })
   isStarted: boolean;
 
-  @Prop({ type: Types.ObjectId, ref: 'Session'})
+  @Prop({ type: Types.ObjectId, ref: 'Session' })
   session: string;
 }
 

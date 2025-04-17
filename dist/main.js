@@ -831,8 +831,8 @@ exports.AppModule = AppModule = __decorate([
             database_module_1.DatabaseModule,
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
-            sets_module_1.SetsModule,
             sessions_module_1.SessionsModule,
+            sets_module_1.SetsModule,
             matches_module_1.MatchesModule,
             locations_module_1.LocationsModule
         ],
@@ -1898,6 +1898,85 @@ exports.SessionsService = SessionsService = __decorate([
 
 /***/ }),
 
+/***/ "./src/sets/sets.controller.ts":
+/*!*************************************!*\
+  !*** ./src/sets/sets.controller.ts ***!
+  \*************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.SetsController = void 0;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const jwt_guard_1 = __webpack_require__(/*! src/auth/guards/jwt.guard */ "./src/auth/guards/jwt.guard.ts");
+const sets_service_1 = __webpack_require__(/*! ./sets.service */ "./src/sets/sets.service.ts");
+let SetsController = class SetsController {
+    constructor(setsService) {
+        this.setsService = setsService;
+    }
+    async createSet(sessionId) {
+        return await this.setsService.createSet(sessionId);
+    }
+    async viewSetForSession(sessionId) {
+        return await this.setsService.viewSetForSession(sessionId);
+    }
+    async viewSingleSet(setId) {
+        return this.setsService.viewSingleSet(setId);
+    }
+    async viewAllSets() {
+        return this.setsService.viewAllSets();
+    }
+};
+exports.SetsController = SetsController;
+__decorate([
+    (0, common_1.Post)('create/:sessionId'),
+    __param(0, (0, common_1.Param)('sessionId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], SetsController.prototype, "createSet", null);
+__decorate([
+    (0, common_1.Get)('sets/:sessionId'),
+    __param(0, (0, common_1.Param)('sessionId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], SetsController.prototype, "viewSetForSession", null);
+__decorate([
+    (0, common_1.Get)(':setId'),
+    __param(0, (0, common_1.Param)('setId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], SetsController.prototype, "viewSingleSet", null);
+__decorate([
+    (0, common_1.Get)('sets'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], SetsController.prototype, "viewAllSets", null);
+exports.SetsController = SetsController = __decorate([
+    (0, common_1.Controller)('sets'),
+    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard),
+    __metadata("design:paramtypes", [typeof (_a = typeof sets_service_1.SetsService !== "undefined" && sets_service_1.SetsService) === "function" ? _a : Object])
+], SetsController);
+
+
+/***/ }),
+
 /***/ "./src/sets/sets.module.ts":
 /*!*********************************!*\
   !*** ./src/sets/sets.module.ts ***!
@@ -1913,13 +1992,177 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SetsModule = void 0;
-const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const common_1 = __webpack_require__(/*! @app/common */ "./libs/common/src/index.ts");
+const common_2 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const mongoose_1 = __webpack_require__(/*! @nestjs/mongoose */ "@nestjs/mongoose");
+const sets_controller_1 = __webpack_require__(/*! ./sets.controller */ "./src/sets/sets.controller.ts");
+const sets_service_1 = __webpack_require__(/*! ./sets.service */ "./src/sets/sets.service.ts");
+const sets_repository_1 = __webpack_require__(/*! ./sets.repository */ "./src/sets/sets.repository.ts");
+const sessions_repository_1 = __webpack_require__(/*! src/sessions/sessions.repository */ "./src/sessions/sessions.repository.ts");
 let SetsModule = class SetsModule {
 };
 exports.SetsModule = SetsModule;
 exports.SetsModule = SetsModule = __decorate([
-    (0, common_1.Module)({})
+    (0, common_2.Module)({
+        imports: [
+            mongoose_1.MongooseModule.forFeature([
+                { name: common_1.Set.name, schema: common_1.SetSchema },
+                { name: common_1.Session.name, schema: common_1.SessionSchema },
+            ])
+        ],
+        controllers: [sets_controller_1.SetsController],
+        providers: [
+            sets_repository_1.SetRepository,
+            sets_service_1.SetsService,
+            sessions_repository_1.SessionRepository,
+        ],
+        exports: [sets_service_1.SetsService]
+    })
 ], SetsModule);
+
+
+/***/ }),
+
+/***/ "./src/sets/sets.repository.ts":
+/*!*************************************!*\
+  !*** ./src/sets/sets.repository.ts ***!
+  \*************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var SetRepository_1;
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.SetRepository = void 0;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const common_2 = __webpack_require__(/*! @app/common */ "./libs/common/src/index.ts");
+const mongoose_1 = __webpack_require__(/*! @nestjs/mongoose */ "@nestjs/mongoose");
+const mongoose_2 = __webpack_require__(/*! mongoose */ "mongoose");
+let SetRepository = SetRepository_1 = class SetRepository extends common_2.AbstractRepository {
+    constructor(SetModel) {
+        super(SetModel);
+        this.logger = new common_1.Logger(SetRepository_1.name);
+    }
+};
+exports.SetRepository = SetRepository;
+exports.SetRepository = SetRepository = SetRepository_1 = __decorate([
+    (0, common_1.Injectable)(),
+    __param(0, (0, mongoose_1.InjectModel)(common_2.Set.name)),
+    __metadata("design:paramtypes", [typeof (_a = typeof mongoose_2.Model !== "undefined" && mongoose_2.Model) === "function" ? _a : Object])
+], SetRepository);
+
+
+/***/ }),
+
+/***/ "./src/sets/sets.service.ts":
+/*!**********************************!*\
+  !*** ./src/sets/sets.service.ts ***!
+  \**********************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.SetsService = void 0;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const sets_repository_1 = __webpack_require__(/*! ./sets.repository */ "./src/sets/sets.repository.ts");
+const sessions_repository_1 = __webpack_require__(/*! ../sessions/sessions.repository */ "./src/sessions/sessions.repository.ts");
+const common_2 = __webpack_require__(/*! @app/common */ "./libs/common/src/index.ts");
+let SetsService = class SetsService {
+    constructor(setRepository, sessionRepository) {
+        this.setRepository = setRepository;
+        this.sessionRepository = sessionRepository;
+        this.setNames = [
+            "Team 7", "Royal Knights", "Bouillon Fc", "Sepulcher FC", "Akatsuki",
+            "Amapiano FC", "Grey Fc", "Dynasty", "Elon Musk Fc", "J-boys FC",
+            "Sporty9ja", "Wizkidfc", "30BG", "Valdomites", "OV-Hoes",
+            "Outsiders", "Celeboys", "Azonto FC", "Akara warriors", "Egusi FC"
+        ];
+    }
+    async allocateMembers(session, createdSets) {
+        const members = session.members;
+        const pickedMembers = createdSets.flatMap(set => set.players);
+        const availablePlayers = members.filter(member => !pickedMembers.includes(member));
+        if (availablePlayers.length === 0)
+            return;
+        for (let i = 0; i < members.length; i++) {
+            const player = availablePlayers[i];
+            const setIndex = i % createdSets.length;
+            const pickedSet = createdSets[setIndex];
+            await this.setRepository.findOneAndUpdate({ _id: pickedSet._id }, { $push: { players: player } });
+        }
+    }
+    async createSet(sessionId) {
+        const session = await this.sessionRepository.findOne({ _id: sessionId });
+        if (!session) {
+            throw new common_2.CustomHttpException('Session not found', common_1.HttpStatus.NOT_FOUND);
+        }
+        const existingSets = await this.setRepository.find({ session: sessionId });
+        const usedNames = existingSets.map(set => set.name);
+        const availableNames = this.setNames.filter(name => !usedNames.includes(name));
+        if (availableNames.length < session.setNumber) {
+            throw new common_2.CustomHttpException('Not enough unique names available for the session', common_1.HttpStatus.BAD_REQUEST);
+        }
+        const count = await this.setRepository.findRaw().countDocuments({ session: sessionId });
+        if (session.maxNumber >= count) {
+            throw new common_2.CustomHttpException('Set already created', common_1.HttpStatus.BAD_REQUEST);
+        }
+        const setData = Array(session.setNumber).fill(null).map(() => {
+            const randomIndex = Math.floor(Math.random() * availableNames.length);
+            const randomName = availableNames.splice(randomIndex, 1)[0];
+            return {
+                session: session._id,
+                name: randomName,
+                players: []
+            };
+        });
+        const createdSets = await this.setRepository.insertMany(setData);
+        await this.allocateMembers(session, createdSets);
+        return {
+            message: 'Sets created successfully',
+            sets: createdSets
+        };
+    }
+    async viewAllSets() {
+        return this.setRepository.findAndPopulate({}, ['players']);
+    }
+    async viewSetForSession(sessionId) {
+        return this.setRepository.findAndPopulate({ session: sessionId }, ['players']);
+    }
+    async viewSingleSet(setId) {
+        const set = await this.setRepository.findAndPopulate({ _id: setId }, ['players']);
+        if (!set) {
+            throw new common_2.CustomHttpException('Set not found', common_1.HttpStatus.NOT_FOUND);
+        }
+        return set;
+    }
+};
+exports.SetsService = SetsService;
+exports.SetsService = SetsService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof sets_repository_1.SetRepository !== "undefined" && sets_repository_1.SetRepository) === "function" ? _a : Object, typeof (_b = typeof sessions_repository_1.SessionRepository !== "undefined" && sessions_repository_1.SessionRepository) === "function" ? _b : Object])
+], SetsService);
 
 
 /***/ }),

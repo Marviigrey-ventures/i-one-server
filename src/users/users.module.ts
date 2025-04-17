@@ -10,21 +10,19 @@ import { UsersJwtStrategy } from '../auth/strategy/jwt.strategy';
 import { JwtService } from '@nestjs/jwt';
 
 @Module({
-	imports: [
-		MongooseModule.forFeature([
-			{ name: User.name, schema: UserSchema }
-		])
-	],
-	controllers: [UsersController],
-	providers: [
-		UsersService, 
-		UserRepository,
-		AuthService,
-		UserLocalStrategy,
-		UsersJwtStrategy,
-		JwtService,
-		MailerService
-	],
-	exports: [UsersService]
+  imports: [
+    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+  ],
+  controllers: [UsersController],
+  providers: [
+    UsersService,
+    UserRepository,
+    AuthService,
+    UserLocalStrategy,
+    UsersJwtStrategy,
+    JwtService,
+    MailerService,
+  ],
+  exports: [UsersService],
 })
 export class UsersModule {}

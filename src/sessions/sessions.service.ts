@@ -9,323 +9,377 @@ import { createSessionRequest } from './dto/sessions.dto';
 
 @Injectable()
 export class SessionsService {
-	
-	constructor(
-		private readonly sessionRepository: SessionRepository, 
-		private readonly locationRepository: LocationRepository,
-		private readonly matchRepository: MatchRepository,
-		private readonly userRepository: UserRepository
-	){}
-	
-	async findNearbySessionMatches(lng: number, lat: number) {
-		const nearbyLocations = await this.locationRepository.find({
-			location: {
-				$near: {
-					$geometry: {
-						type: 'Point',
-						coordinates: [lng, lat]
-					},
-					$maxDistance: 5000
-				}
-			}
-		});
-		const locationIds = nearbyLocations.map(loc => loc._id);
-		const locatedSessions = await this.sessionRepository.find({ location: { $in: locationIds } });
-		const sessionIds = locatedSessions.map(session => session._id);
-		
-		return this.matchRepository.findAndPopulate(
-			{ session: { $in: sessionIds }},
-			['teamOne', 'teamTwo']
-		)
-	}
-	
-	async startSession(userId: string, locationId: string) {
-		const user = await this.userRepository.findOne({ _id: userId });
-		
-		if (user == null) {
-			throw new CustomHttpException('User not found', HttpStatus.NOT_FOUND)
-		}
-		
-		await this.userRepository.findOneAndUpdate({
-			_id: userId
-		}, { isCaptain: true })
-		
-		const session = await this.sessionRepository.create({ location: locationId, captain: userId });
-		
-		await this.userRepository.findOneAndUpdate(
-			{ _id: userId },
-			{ currentSession: session._id }
-		)
-		
-		return session;
-	}
+  constructor(
+    private readonly sessionRepository: SessionRepository,
+    private readonly locationRepository: LocationRepository,
+    private readonly matchRepository: MatchRepository,
+    private readonly userRepository: UserRepository,
+  ) {}
 
-	async createSession({
-		setNumber,
-		playersPerTeam,
-		timeDuration,
-		minsPerSet,
-		startTime,
-		winningDecider
-	}: createSessionRequest, userId: string, sessionId: string) {
-		const user: User = await this.userRepository.findOne({ _id: userId })
+  async findNearbySessionMatches(lng: number, lat: number) {
+    const nearbyLocations = await this.locationRepository.find({
+      location: {
+        $near: {
+          $geometry: {
+            type: 'Point',
+            coordinates: [lng, lat],
+          },
+          $maxDistance: 5000,
+        },
+      },
+    });
+    const locationIds = nearbyLocations.map((loc) => loc._id);
+    const locatedSessions = await this.sessionRepository.find({
+      location: { $in: locationIds },
+    });
+    const sessionIds = locatedSessions.map((session) => session._id);
 
-		const session = await this.sessionRepository.findOne({ _id: sessionId})
-		if (session === null){
-			throw new CustomHttpException(
-				"Session does not exist",
-				HttpStatus.NOT_FOUND
-			)
-		}
+    return this.matchRepository.findAndPopulate(
+      { session: { $in: sessionIds } },
+      ['teamOne', 'teamTwo'],
+    );
+  }
 
-		if (!user.isCaptain) {
-			throw new CustomHttpException(
-				"You are not a captain",
-				HttpStatus.UNAUTHORIZED
-			)
-		}
+  async startSession(userId: string, locationId: string) {
+    const user = await this.userRepository.findOne({ _id: userId });
 
-		const addedStopTime = new Date(new Date(startTime).getTime() + timeDuration * 60000)
+    if (user == null) {
+      throw new CustomHttpException('User not found', HttpStatus.NOT_FOUND);
+    }
 
-		const existingSchedule = await this.sessionRepository.findOne({
-			startTime,
-			stopTime: addedStopTime
-		})
+    await this.userRepository.findOneAndUpdate(
+      {
+        _id: userId,
+      },
+      { isCaptain: true },
+    );
 
-		if (existingSchedule !== null){
-			throw new CustomHttpException(
-				"Session Time already exists",
-				HttpStatus.CONFLICT
-			)
-		}
+    const session = await this.sessionRepository.create({
+      location: locationId,
+      captain: userId,
+    });
 
-		const overlappingSchedule = await this.sessionRepository.findOne({
-			startTime: { $lt: new Date(addedStopTime) },
-			stopTime: { $gt: new Date(startTime)}
-		})
+    await this.userRepository.findOneAndUpdate(
+      { _id: userId },
+      { currentSession: session._id },
+    );
 
-		if (overlappingSchedule !== null){
-			throw new CustomHttpException(
-				"This session overlaps with another session",
-				HttpStatus.CONFLICT
-			)
-		}
+    return session;
+  }
 
-		const maxNumber = playersPerTeam * setNumber;
+  async createSession(
+    {
+      setNumber,
+      playersPerTeam,
+      timeDuration,
+      minsPerSet,
+      startTime,
+      winningDecider,
+    }: createSessionRequest,
+    userId: string,
+    sessionId: string,
+  ) {
+    const user: User = await this.userRepository.findOne({ _id: userId });
 
-		const newSession = await this.sessionRepository.findOneAndUpdate({
-			_id: sessionId
-		}, {
-			setNumber,
-			playersPerTeam,
-			minsPerSet,
-			startTime,
-			stopTime: addedStopTime,
-			winningDecider,
-			maxNumber
-		})
+    const session = await this.sessionRepository.findOne({ _id: sessionId });
+    if (session === null) {
+      throw new CustomHttpException(
+        'Session does not exist',
+        HttpStatus.NOT_FOUND,
+      );
+    }
 
-		return newSession
-	}
-	
-	async endSession(sessionId: string) {
-		const session: Session = await this.sessionRepository.findOne({ _id: sessionId });
-		if (!session) throw new CustomHttpException("Session not found", HttpStatus.NOT_FOUND);
-		
-		await Promise.all(
-			session.members.map(async (memberId) => {
-				const user = await this.userRepository.findOne({ _id: memberId.toString() });
-				if (user !== null) {
-					await this.userRepository.findOneAndUpdate(
-						{ _id: memberId.toString() },
-						{ currentSession: null, isCaptain: false }
-					)
-				}
-			})
-		);
-		
-		await this.sessionRepository.findOneAndUpdate({
-			_id: session._id.toString()
-		},
-		{ captain: null, inProgress: false})
-		
-		return { message: 'Session ended successfully', session };
-		
-	}
-	
-	async joinSession(userId: string, sessionId: string) {
-		const session = await this.sessionRepository.findOne({ _id: sessionId });
-		if (!session) throw new CustomHttpException('Session not found', HttpStatus.NOT_FOUND);
-	  
-		if (session.members.includes(userId)) {
-		  throw new CustomHttpException('User is already in the session', HttpStatus.CONFLICT);
-		}
-	  
-		if (session.isFull) {
-		  throw new CustomHttpException('Session is full', HttpStatus.BAD_REQUEST);
-		}
-	  
-		const updatedSession = await this.sessionRepository.findOneAndUpdate(
-		  { _id: sessionId },
-		  { $push: { members: userId }, $set: { isFull: session.members.length + 1 >= session.maxNumber } },
-		);
-	  
-		await this.userRepository.findOneAndUpdate(
-		  { _id: userId },
-		  { currentSession: sessionId }
-		);
-	  
-		return { message: 'User successfully joined session', session: updatedSession };
-	  }
-	
-	async leaveSession(userId: string, sessionId: string) {
-		const session: Session = await this.sessionRepository.findOne({ _id: sessionId });
-		if (!session) throw new CustomHttpException('Session not found', HttpStatus.NOT_FOUND);
-	  
-		const user = await this.userRepository.findOne({ _id: userId });
-		if (!user) throw new CustomHttpException('User not found', HttpStatus.NOT_FOUND);
-	  
-		try {
+    if (!user.isCaptain) {
+      throw new CustomHttpException(
+        'You are not a captain',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
 
-		  await this.sessionRepository.findOneAndUpdate(
-			{ _id: sessionId },
-			{
-			  $pull: { members: userId },
-			  $set: { isFull: session.members.length - 1 >= session.maxNumber },
-			}
-		  );
-	  
-		  await this.userRepository.findOneAndUpdate(
-			{ _id: userId },
-			{ currentSession: null }
-		  );
-	  
-		  const updatedSession = await this.sessionRepository.findOne({ _id: sessionId });
-		  return { message: 'User successfully left session', session: updatedSession };
-		} catch (error) {
-		  throw new CustomHttpException('Failed to leave session', HttpStatus.INTERNAL_SERVER_ERROR);
-		}
-	  }
+    const addedStopTime = new Date(
+      new Date(startTime).getTime() + timeDuration * 60000,
+    );
 
-		async viewSessionMembers(sessionId: string){
-			const session: SessionI = await this.sessionRepository.findOneAndPopulate({
-				_id: sessionId
-			}, ['members'])
+    const existingSchedule = await this.sessionRepository.findOne({
+      startTime,
+      stopTime: addedStopTime,
+    });
 
-			if (session === null) {
-				throw new CustomHttpException(
-					"Session not found",
-					HttpStatus.NOT_FOUND
-				)
-			}
+    if (existingSchedule !== null) {
+      throw new CustomHttpException(
+        'Session Time already exists',
+        HttpStatus.CONFLICT,
+      );
+    }
 
-			if (!session.members || session.members.length === 0){
-				throw new CustomHttpException(
-					"No members have joined yet",
-					HttpStatus.NOT_FOUND
-				)
-			}
+    const overlappingSchedule = await this.sessionRepository.findOne({
+      startTime: { $lt: new Date(addedStopTime) },
+      stopTime: { $gt: new Date(startTime) },
+    });
 
-			const nicknames = session.members.map((member) => member.nickname)
-			return nicknames
-		} 
+    if (overlappingSchedule !== null) {
+      throw new CustomHttpException(
+        'This session overlaps with another session',
+        HttpStatus.CONFLICT,
+      );
+    }
 
-		async viewSession(sessionId: string) {
-			const verifySession = await this.sessionRepository.findOne({
-				_id: sessionId
-			})
+    const maxNumber = playersPerTeam * setNumber;
 
-			if (sessionId === null){
-				throw new CustomHttpException(
-					"Session does not exist",
-					HttpStatus.NOT_FOUND
-				)
-			}
+    const newSession = await this.sessionRepository.findOneAndUpdate(
+      {
+        _id: sessionId,
+      },
+      {
+        setNumber,
+        playersPerTeam,
+        minsPerSet,
+        startTime,
+        stopTime: addedStopTime,
+        winningDecider,
+        maxNumber,
+      },
+    );
 
-			return await this.sessionRepository.findRaw().findOne({
-				_id: sessionId
-			}).populate({
-				path: 'members',
-				select: "nickname -_id"
-			}).populate({
-				path: "members",
-				select: "nickname -_id"
-			})
-		}
+    return newSession;
+  }
 
-	  async viewAllSessions() {
-		return this.sessionRepository.findAndPopulate(
-			{ finished: false },
-			['captain', 'members', 'location']
-		)
-	  }
+  async endSession(sessionId: string) {
+    const session: Session = await this.sessionRepository.findOne({
+      _id: sessionId,
+    });
+    if (!session)
+      throw new CustomHttpException('Session not found', HttpStatus.NOT_FOUND);
 
-	  async deleteSession(sessionId: string) {
-		const session: Session = await this.sessionRepository.findOne({ _id: sessionId });
-		if (!session) throw new CustomHttpException('Session not found', HttpStatus.NOT_FOUND);
+    await Promise.all(
+      session.members.map(async (memberId) => {
+        const user = await this.userRepository.findOne({
+          _id: memberId.toString(),
+        });
+        if (user !== null) {
+          await this.userRepository.findOneAndUpdate(
+            { _id: memberId.toString() },
+            { currentSession: null, isCaptain: false },
+          );
+        }
+      }),
+    );
 
-		const updateQuery: UpdateQuery<User> = {
-			$set: { currentSession: null, isCaptain: false }
-		  };
-	  
-		await this.userRepository.updateMany(
-		  { _id: { $in: session.members } },
-		  updateQuery
-		);
+    await this.sessionRepository.findOneAndUpdate(
+      {
+        _id: session._id.toString(),
+      },
+      { captain: null, inProgress: false },
+    );
 
-		await this.sessionRepository.delete(session._id);
-	  
-		return { message: 'Session deleted successfully' };
-	  }
+    return { message: 'Session ended successfully', session };
+  }
 
-	  async recheduleSession(sessionId: string, startTime: Date, timeDuration: number) {
-		const session = await this.sessionRepository.findOne({ _id: sessionId })
-		if (!session) {
-			throw new CustomHttpException('Session not found', HttpStatus.NOT_FOUND);
-		}
+  async joinSession(userId: string, sessionId: string) {
+    const session = await this.sessionRepository.findOne({ _id: sessionId });
+    if (!session)
+      throw new CustomHttpException('Session not found', HttpStatus.NOT_FOUND);
 
-		const addedStopTime = new Date(
-			new Date(startTime).getTime() + timeDuration * 60000
-		);
+    if (session.members.includes(userId)) {
+      throw new CustomHttpException(
+        'User is already in the session',
+        HttpStatus.CONFLICT,
+      );
+    }
 
-		const existingSchedule = await this.sessionRepository.findOne({
-			startTime,
-			stopTime: addedStopTime,
-		});
+    if (session.isFull) {
+      throw new CustomHttpException('Session is full', HttpStatus.BAD_REQUEST);
+    }
 
-		if (existingSchedule) {
-			throw new CustomHttpException(
-			  'Session Time already exists',
-			  HttpStatus.CONFLICT
-			);
-		}
+    const updatedSession = await this.sessionRepository.findOneAndUpdate(
+      { _id: sessionId },
+      {
+        $push: { members: userId },
+        $set: { isFull: session.members.length + 1 >= session.maxNumber },
+      },
+    );
 
-		const overlappingSchedule = await this.sessionRepository.findOne({
-			_id: { $ne: sessionId },
-			startTime: { $lt: addedStopTime },
-			stopTime: { $gt: startTime },
-		});
+    await this.userRepository.findOneAndUpdate(
+      { _id: userId },
+      { currentSession: sessionId },
+    );
 
-		if (overlappingSchedule) {
-			throw new CustomHttpException(
-			  'This session overlaps with another one',
-			  HttpStatus.CONFLICT
-			);
-		  }
+    return {
+      message: 'User successfully joined session',
+      session: updatedSession,
+    };
+  }
 
-		const updatedSession = await this.sessionRepository.findOneAndUpdate(
-			{ _id: sessionId },
-			{
-			  startTime,
-			  timeDuration,
-			  stopTime: addedStopTime,
-			}
-		  );
-		
-		  return {
-			message: 'Session rescheduled successfully',
-			session: updatedSession,
-		  };
+  async leaveSession(userId: string, sessionId: string) {
+    const session: Session = await this.sessionRepository.findOne({
+      _id: sessionId,
+    });
+    if (!session)
+      throw new CustomHttpException('Session not found', HttpStatus.NOT_FOUND);
 
-	  }
+    const user = await this.userRepository.findOne({ _id: userId });
+    if (!user)
+      throw new CustomHttpException('User not found', HttpStatus.NOT_FOUND);
+
+    try {
+      await this.sessionRepository.findOneAndUpdate(
+        { _id: sessionId },
+        {
+          $pull: { members: userId },
+          $set: { isFull: session.members.length - 1 >= session.maxNumber },
+        },
+      );
+
+      await this.userRepository.findOneAndUpdate(
+        { _id: userId },
+        { currentSession: null },
+      );
+
+      const updatedSession = await this.sessionRepository.findOne({
+        _id: sessionId,
+      });
+      return {
+        message: 'User successfully left session',
+        session: updatedSession,
+      };
+    } catch (error) {
+      throw new CustomHttpException(
+        'Failed to leave session',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async viewSessionMembers(sessionId: string) {
+    const session: SessionI = await this.sessionRepository.findOneAndPopulate(
+      {
+        _id: sessionId,
+      },
+      ['members'],
+    );
+
+    if (session === null) {
+      throw new CustomHttpException('Session not found', HttpStatus.NOT_FOUND);
+    }
+
+    if (!session.members || session.members.length === 0) {
+      throw new CustomHttpException(
+        'No members have joined yet',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const nicknames = session.members.map((member) => member.nickname);
+    return nicknames;
+  }
+
+  async viewSession(sessionId: string) {
+    const verifySession = await this.sessionRepository.findOne({
+      _id: sessionId,
+    });
+
+    if (verifySession === null) {
+      throw new CustomHttpException(
+        'Session does not exist',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    return await this.sessionRepository
+      .findRaw()
+      .findOne({
+        _id: sessionId,
+      })
+      .populate({
+        path: 'members',
+        select: 'nickname -_id',
+      })
+      .populate({
+        path: 'members',
+        select: 'nickname -_id',
+      });
+  }
+
+  async viewAllSessions() {
+    return this.sessionRepository.findAndPopulate({ finished: false }, [
+      'captain',
+      'members',
+      'location',
+    ]);
+  }
+
+  async deleteSession(sessionId: string) {
+    const session: Session = await this.sessionRepository.findOne({
+      _id: sessionId,
+    });
+    if (!session)
+      throw new CustomHttpException('Session not found', HttpStatus.NOT_FOUND);
+
+    const updateQuery: UpdateQuery<User> = {
+      $set: { currentSession: null, isCaptain: false },
+    };
+
+    await this.userRepository.updateMany(
+      { _id: { $in: session.members } },
+      updateQuery,
+    );
+
+    await this.sessionRepository.delete(session._id);
+
+    return { message: 'Session deleted successfully' };
+  }
+
+  async recheduleSession(
+    sessionId: string,
+    startTime: Date,
+    timeDuration: number,
+  ) {
+    const session = await this.sessionRepository.findOne({ _id: sessionId });
+    if (!session) {
+      throw new CustomHttpException('Session not found', HttpStatus.NOT_FOUND);
+    }
+
+    const addedStopTime = new Date(
+      new Date(startTime).getTime() + timeDuration * 60000,
+    );
+
+    const existingSchedule = await this.sessionRepository.findOne({
+      startTime,
+      stopTime: addedStopTime,
+    });
+
+    if (existingSchedule) {
+      throw new CustomHttpException(
+        'Session Time already exists',
+        HttpStatus.CONFLICT,
+      );
+    }
+
+    const overlappingSchedule = await this.sessionRepository.findOne({
+      _id: { $ne: sessionId },
+      startTime: { $lt: addedStopTime },
+      stopTime: { $gt: startTime },
+    });
+
+    if (overlappingSchedule) {
+      throw new CustomHttpException(
+        'This session overlaps with another one',
+        HttpStatus.CONFLICT,
+      );
+    }
+
+    const updatedSession = await this.sessionRepository.findOneAndUpdate(
+      { _id: sessionId },
+      {
+        startTime,
+        timeDuration,
+        stopTime: addedStopTime,
+      },
+    );
+
+    return {
+      message: 'Session rescheduled successfully',
+      session: updatedSession,
+    };
+  }
 }
