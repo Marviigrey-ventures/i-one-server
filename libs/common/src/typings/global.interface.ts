@@ -24,3 +24,16 @@ export interface LocationI {}
 export interface UserI {
   nickname: string;
 }
+
+export interface MatchI {
+  teamOne: SetI;
+  teamTwo: SetI;
+  teamOneScore: number;
+  teamTwoScore: number;
+  isStarted: boolean;
+  session: SessionI;
+}
+
+export interface SetI {
+  name: string;
+}

@@ -220,7 +220,7 @@ class AbstractRepository {
         return await new Promise((resolve) => resolve(this.model.deleteMany(filterQuery)));
     }
     async insertMany(documents, options) {
-        return await this.model.insertMany(documents);
+        return await this.model.insertMany(documents, options);
     }
     async find(filterQuery) {
         return await new Promise((resolve) => resolve(this.model
@@ -326,12 +326,12 @@ __decorate([
     (0, mongoose_1.Prop)({
         type: {
             type: String,
-            default: 'Point'
+            default: 'Point',
         },
         coordinates: {
             type: [Number],
-            default: [0, 0]
-        }
+            default: [0, 0],
+        },
     }),
     __metadata("design:type", typeof (_a = typeof common_1.LocationCoordinates !== "undefined" && common_1.LocationCoordinates) === "function" ? _a : Object)
 ], Location.prototype, "location", void 0);
@@ -590,7 +590,7 @@ __decorate([
     __metadata("design:type", Boolean)
 ], User.prototype, "isCaptain", void 0);
 __decorate([
-    (0, mongoose_1.Prop)({ type: mongoose_2.Types.ObjectId, ref: "Session", default: null }),
+    (0, mongoose_1.Prop)({ type: mongoose_2.Types.ObjectId, ref: 'Session', default: null }),
     __metadata("design:type", String)
 ], User.prototype, "currentSession", void 0);
 __decorate([
@@ -609,12 +609,12 @@ __decorate([
     (0, mongoose_1.Prop)({
         type: {
             type: String,
-            default: 'Point'
+            default: 'Point',
         },
         coordinates: {
             type: [Number],
-            default: [0, 0]
-        }
+            default: [0, 0],
+        },
     }),
     __metadata("design:type", typeof (_b = typeof common_1.LocationCoordinates !== "undefined" && common_1.LocationCoordinates) === "function" ? _b : Object)
 ], User.prototype, "location", void 0);
@@ -677,19 +677,19 @@ let MailerService = class MailerService {
     constructor(configService) {
         this.configService = configService;
         this.transporter = nodemailer.createTransport({
-            host: this.configService.get("MAIL_HOST"),
-            port: this.configService.get("MAIL_PORT"),
-            secure: this.configService.get("MAIL_SECURE"),
+            host: this.configService.get('MAIL_HOST'),
+            port: this.configService.get('MAIL_PORT'),
+            secure: this.configService.get('MAIL_SECURE'),
             auth: {
-                user: this.configService.get("MAIL_USER"),
-                pass: this.configService.get("MAIL_PASS"),
+                user: this.configService.get('MAIL_USER'),
+                pass: this.configService.get('MAIL_PASS'),
             },
         });
     }
     async sendMail(to, subject, text, html) {
         try {
             await this.transporter.sendMail({
-                from: this.configService.get("MAIL_FROM"),
+                from: this.configService.get('MAIL_FROM'),
                 to,
                 subject,
                 text,
@@ -834,7 +834,7 @@ exports.AppModule = AppModule = __decorate([
             sessions_module_1.SessionsModule,
             sets_module_1.SetsModule,
             matches_module_1.MatchesModule,
-            locations_module_1.LocationsModule
+            locations_module_1.LocationsModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],
@@ -977,12 +977,8 @@ exports.AuthModule = AuthModule = __decorate([
             }),
         ],
         controllers: [auth_controller_1.AuthController],
-        providers: [
-            auth_service_1.AuthService,
-            local_strategy_1.UserLocalStrategy,
-            jwt_strategy_1.UsersJwtStrategy,
-        ],
-        exports: [auth_service_1.AuthService]
+        providers: [auth_service_1.AuthService, local_strategy_1.UserLocalStrategy, jwt_strategy_1.UsersJwtStrategy],
+        exports: [auth_service_1.AuthService],
     })
 ], AuthModule);
 
@@ -1110,9 +1106,9 @@ let UsersJwtStrategy = class UsersJwtStrategy extends (0, passport_1.PassportStr
             jwtFromRequest: passport_jwt_1.ExtractJwt.fromExtractors([
                 (request) => {
                     return request?.cookies?.Authentication;
-                }
+                },
             ]),
-            secretOrKey: configService.get('JWT_SECRET')
+            secretOrKey: configService.get('JWT_SECRET'),
         });
         this.usersService = usersService;
     }
@@ -1208,11 +1204,11 @@ exports.DatabaseModule = DatabaseModule = __decorate([
                 useFactory: (configService) => ({
                     uri: process.env.NODE_ENV === 'test'
                         ? configService.get('TEST_MONGODB_URI')
-                        : configService.get('MONGODB_URI', 'mongodb://root:password123@mongodb-primary:27017/')
+                        : configService.get('MONGODB_URI', 'mongodb://root:password123@mongodb-primary:27017/'),
                 }),
-                inject: [config_1.ConfigService]
-            })
-        ]
+                inject: [config_1.ConfigService],
+            }),
+        ],
     })
 ], DatabaseModule);
 
@@ -1288,6 +1284,96 @@ exports.LocationRepository = LocationRepository = LocationRepository_1 = __decor
 
 /***/ }),
 
+/***/ "./src/matches/matches.controller.ts":
+/*!*******************************************!*\
+  !*** ./src/matches/matches.controller.ts ***!
+  \*******************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.MatchesController = void 0;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const jwt_guard_1 = __webpack_require__(/*! src/auth/guards/jwt.guard */ "./src/auth/guards/jwt.guard.ts");
+const matches_service_1 = __webpack_require__(/*! ./matches.service */ "./src/matches/matches.service.ts");
+let MatchesController = class MatchesController {
+    constructor(matchesService) {
+        this.matchesService = matchesService;
+    }
+    async matchUp(sessionId) {
+        return this.matchesService.matchUp(sessionId);
+    }
+    async viewSessionMatchUps(sessionId) {
+        return this.matchesService.viewSessionMatchUps(sessionId);
+    }
+    async startMatchInSession(matchId) {
+        return this.matchesService.startMatch(matchId);
+    }
+    async viewMatchDetails(matchId) {
+        return this.matchesService.viewMatchDetails(matchId);
+    }
+    async endMatchInSession(matchId) {
+        return this.matchesService.endMatch(matchId);
+    }
+};
+exports.MatchesController = MatchesController;
+__decorate([
+    (0, common_1.Post)('matchup/:sessionId'),
+    __param(0, (0, common_1.Param)('sessionId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], MatchesController.prototype, "matchUp", null);
+__decorate([
+    (0, common_1.Get)('matchups/:sessionId'),
+    __param(0, (0, common_1.Param)('sessionId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], MatchesController.prototype, "viewSessionMatchUps", null);
+__decorate([
+    (0, common_1.Post)('start/:matchId'),
+    __param(0, (0, common_1.Param)('matchId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], MatchesController.prototype, "startMatchInSession", null);
+__decorate([
+    (0, common_1.Get)('details/:matchId'),
+    __param(0, (0, common_1.Param)('matchId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], MatchesController.prototype, "viewMatchDetails", null);
+__decorate([
+    (0, common_1.Post)('end/:matchId'),
+    __param(0, (0, common_1.Param)('matchId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], MatchesController.prototype, "endMatchInSession", null);
+exports.MatchesController = MatchesController = __decorate([
+    (0, common_1.Controller)('match'),
+    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard),
+    __metadata("design:paramtypes", [typeof (_a = typeof matches_service_1.MatchesService !== "undefined" && matches_service_1.MatchesService) === "function" ? _a : Object])
+], MatchesController);
+
+
+/***/ }),
+
 /***/ "./src/matches/matches.module.ts":
 /*!***************************************!*\
   !*** ./src/matches/matches.module.ts ***!
@@ -1303,12 +1389,32 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.MatchesModule = void 0;
-const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const common_1 = __webpack_require__(/*! @app/common */ "./libs/common/src/index.ts");
+const common_2 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const mongoose_1 = __webpack_require__(/*! @nestjs/mongoose */ "@nestjs/mongoose");
+const matches_repository_1 = __webpack_require__(/*! src/matches/matches.repository */ "./src/matches/matches.repository.ts");
+const matches_controller_1 = __webpack_require__(/*! ./matches.controller */ "./src/matches/matches.controller.ts");
+const matches_service_1 = __webpack_require__(/*! ./matches.service */ "./src/matches/matches.service.ts");
+const sets_repository_1 = __webpack_require__(/*! src/sets/sets.repository */ "./src/sets/sets.repository.ts");
 let MatchesModule = class MatchesModule {
 };
 exports.MatchesModule = MatchesModule;
 exports.MatchesModule = MatchesModule = __decorate([
-    (0, common_1.Module)({})
+    (0, common_2.Module)({
+        imports: [
+            mongoose_1.MongooseModule.forFeature([
+                { name: common_1.Match.name, schema: common_1.MatchSchema },
+                { name: common_1.Set.name, schema: common_1.SetSchema }
+            ]),
+        ],
+        controllers: [matches_controller_1.MatchesController],
+        providers: [
+            matches_service_1.MatchesService,
+            matches_repository_1.MatchRepository,
+            sets_repository_1.SetRepository
+        ],
+        exports: [matches_service_1.MatchesService],
+    })
 ], MatchesModule);
 
 
@@ -1353,6 +1459,114 @@ exports.MatchRepository = MatchRepository = MatchRepository_1 = __decorate([
     __param(0, (0, mongoose_1.InjectModel)(common_2.Match.name)),
     __metadata("design:paramtypes", [typeof (_a = typeof mongoose_2.Model !== "undefined" && mongoose_2.Model) === "function" ? _a : Object])
 ], MatchRepository);
+
+
+/***/ }),
+
+/***/ "./src/matches/matches.service.ts":
+/*!****************************************!*\
+  !*** ./src/matches/matches.service.ts ***!
+  \****************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.MatchesService = void 0;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const matches_repository_1 = __webpack_require__(/*! ./matches.repository */ "./src/matches/matches.repository.ts");
+const sets_repository_1 = __webpack_require__(/*! ../sets/sets.repository */ "./src/sets/sets.repository.ts");
+const common_2 = __webpack_require__(/*! @app/common */ "./libs/common/src/index.ts");
+let MatchesService = class MatchesService {
+    constructor(matchRepository, setRepository) {
+        this.matchRepository = matchRepository;
+        this.setRepository = setRepository;
+    }
+    async viewSetForSession(sessionId) {
+        return await this.setRepository.find({ session: sessionId });
+    }
+    async matchUp(sessionId) {
+        const sets = await this.viewSetForSession(sessionId);
+        if (!sets || sets.length === 0) {
+            throw new common_2.CustomHttpException('No sets found for this session', common_1.HttpStatus.NOT_FOUND);
+        }
+        const expectedLength = sets.length / 2;
+        let availableSets = sets.map((set) => set._id);
+        if (availableSets.length % 2 !== 0) {
+            throw new common_2.CustomHttpException('Cannot create pairs with an odd number of sets', common_1.HttpStatus.BAD_REQUEST);
+        }
+        const existingMatchUp = await this.matchRepository.find({ session: sessionId });
+        const alreadyMatched = existingMatchUp.length >= expectedLength;
+        if (alreadyMatched) {
+            throw new common_2.CustomHttpException('Teams already matched for this session', common_1.HttpStatus.BAD_REQUEST);
+        }
+        const matchUps = [];
+        while (availableSets.length > 0) {
+            const randomIndex1 = Math.floor(Math.random() * availableSets.length);
+            const randomTeam1 = availableSets[randomIndex1];
+            availableSets.splice(randomIndex1, 1);
+            const randomIndex2 = Math.floor(Math.random() * availableSets.length);
+            const randomTeam2 = availableSets[randomIndex2];
+            availableSets.splice(randomIndex2, 1);
+            matchUps.push({
+                teamOne: randomTeam1,
+                teamTwo: randomTeam2,
+                session: sessionId,
+            });
+        }
+        return await this.matchRepository.insertMany(matchUps);
+    }
+    async viewSessionMatchUps(sessionId) {
+        const matches = await this.matchRepository.findAndPopulate({ session: sessionId }, ['teamOne', 'teamTwo']);
+        if (!matches || matches.length === 0) {
+            throw new common_2.CustomHttpException('No matchups exist in this session yet', common_1.HttpStatus.NOT_FOUND);
+        }
+        return matches;
+    }
+    async startMatch(matchId) {
+        const match = await this.matchRepository.findOneAndPopulate({ _id: matchId }, ['teamOne', 'teamTwo']);
+        if (!match) {
+            throw new common_2.CustomHttpException('Match not found', common_1.HttpStatus.NOT_FOUND);
+        }
+        const updatedMatch = await this.matchRepository.findOneAndUpdate({ _id: matchId }, { isStarted: true });
+        return {
+            message: `${match.teamOne.name} vs ${match.teamTwo.name} is underway`,
+            match: updatedMatch,
+        };
+    }
+    async endMatch(matchId) {
+        const match = await this.matchRepository.findOneAndPopulate({ _id: matchId }, ['teamOne', 'teamTwo']);
+        if (!match) {
+            throw new common_2.CustomHttpException('Match not found', common_1.HttpStatus.NOT_FOUND);
+        }
+        const updatedMatch = await this.matchRepository.findOneAndUpdate({ _id: matchId }, { isStarted: false });
+        return {
+            message: `Final Score- ${match.teamOne.name}:${match.teamOneScore} vs ${match.teamTwo.name}:${match.teamTwoScore}`,
+            match: updatedMatch,
+        };
+    }
+    async viewMatchDetails(matchId) {
+        const match = await this.matchRepository.findOneAndPopulate({ _id: matchId }, ['teamOne', 'teamTwo']);
+        if (!match) {
+            throw new common_2.CustomHttpException('Match not found', common_1.HttpStatus.NOT_FOUND);
+        }
+        return match;
+    }
+};
+exports.MatchesService = MatchesService;
+exports.MatchesService = MatchesService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof matches_repository_1.MatchRepository !== "undefined" && matches_repository_1.MatchRepository) === "function" ? _a : Object, typeof (_b = typeof sets_repository_1.SetRepository !== "undefined" && sets_repository_1.SetRepository) === "function" ? _b : Object])
+], MatchesService);
 
 
 /***/ }),
@@ -1605,7 +1819,7 @@ exports.SessionsModule = SessionsModule = __decorate([
                 { name: common_1.User.name, schema: common_1.UserSchema },
                 { name: common_1.Location.name, schema: common_1.LocationSchema },
                 { name: common_1.Match.name, schema: common_1.MatchSchema },
-            ])
+            ]),
         ],
         controllers: [sessions_controller_1.SessionsController],
         providers: [
@@ -1615,7 +1829,7 @@ exports.SessionsModule = SessionsModule = __decorate([
             locations_repository_1.LocationRepository,
             matches_repository_1.MatchRepository,
         ],
-        exports: [sessions_service_1.SessionsService]
+        exports: [sessions_service_1.SessionsService],
     })
 ], SessionsModule);
 
@@ -1703,15 +1917,17 @@ let SessionsService = class SessionsService {
                 $near: {
                     $geometry: {
                         type: 'Point',
-                        coordinates: [lng, lat]
+                        coordinates: [lng, lat],
                     },
-                    $maxDistance: 5000
-                }
-            }
+                    $maxDistance: 5000,
+                },
+            },
         });
-        const locationIds = nearbyLocations.map(loc => loc._id);
-        const locatedSessions = await this.sessionRepository.find({ location: { $in: locationIds } });
-        const sessionIds = locatedSessions.map(session => session._id);
+        const locationIds = nearbyLocations.map((loc) => loc._id);
+        const locatedSessions = await this.sessionRepository.find({
+            location: { $in: locationIds },
+        });
+        const sessionIds = locatedSessions.map((session) => session._id);
         return this.matchRepository.findAndPopulate({ session: { $in: sessionIds } }, ['teamOne', 'teamTwo']);
     }
     async startSession(userId, locationId) {
@@ -1720,39 +1936,42 @@ let SessionsService = class SessionsService {
             throw new common_2.CustomHttpException('User not found', common_1.HttpStatus.NOT_FOUND);
         }
         await this.userRepository.findOneAndUpdate({
-            _id: userId
+            _id: userId,
         }, { isCaptain: true });
-        const session = await this.sessionRepository.create({ location: locationId, captain: userId });
+        const session = await this.sessionRepository.create({
+            location: locationId,
+            captain: userId,
+        });
         await this.userRepository.findOneAndUpdate({ _id: userId }, { currentSession: session._id });
         return session;
     }
-    async createSession({ setNumber, playersPerTeam, timeDuration, minsPerSet, startTime, winningDecider }, userId, sessionId) {
+    async createSession({ setNumber, playersPerTeam, timeDuration, minsPerSet, startTime, winningDecider, }, userId, sessionId) {
         const user = await this.userRepository.findOne({ _id: userId });
         const session = await this.sessionRepository.findOne({ _id: sessionId });
         if (session === null) {
-            throw new common_2.CustomHttpException("Session does not exist", common_1.HttpStatus.NOT_FOUND);
+            throw new common_2.CustomHttpException('Session does not exist', common_1.HttpStatus.NOT_FOUND);
         }
         if (!user.isCaptain) {
-            throw new common_2.CustomHttpException("You are not a captain", common_1.HttpStatus.UNAUTHORIZED);
+            throw new common_2.CustomHttpException('You are not a captain', common_1.HttpStatus.UNAUTHORIZED);
         }
         const addedStopTime = new Date(new Date(startTime).getTime() + timeDuration * 60000);
         const existingSchedule = await this.sessionRepository.findOne({
             startTime,
-            stopTime: addedStopTime
+            stopTime: addedStopTime,
         });
         if (existingSchedule !== null) {
-            throw new common_2.CustomHttpException("Session Time already exists", common_1.HttpStatus.CONFLICT);
+            throw new common_2.CustomHttpException('Session Time already exists', common_1.HttpStatus.CONFLICT);
         }
         const overlappingSchedule = await this.sessionRepository.findOne({
             startTime: { $lt: new Date(addedStopTime) },
-            stopTime: { $gt: new Date(startTime) }
+            stopTime: { $gt: new Date(startTime) },
         });
         if (overlappingSchedule !== null) {
-            throw new common_2.CustomHttpException("This session overlaps with another session", common_1.HttpStatus.CONFLICT);
+            throw new common_2.CustomHttpException('This session overlaps with another session', common_1.HttpStatus.CONFLICT);
         }
         const maxNumber = playersPerTeam * setNumber;
         const newSession = await this.sessionRepository.findOneAndUpdate({
-            _id: sessionId
+            _id: sessionId,
         }, {
             setNumber,
             playersPerTeam,
@@ -1760,22 +1979,26 @@ let SessionsService = class SessionsService {
             startTime,
             stopTime: addedStopTime,
             winningDecider,
-            maxNumber
+            maxNumber,
         });
         return newSession;
     }
     async endSession(sessionId) {
-        const session = await this.sessionRepository.findOne({ _id: sessionId });
+        const session = await this.sessionRepository.findOne({
+            _id: sessionId,
+        });
         if (!session)
-            throw new common_2.CustomHttpException("Session not found", common_1.HttpStatus.NOT_FOUND);
+            throw new common_2.CustomHttpException('Session not found', common_1.HttpStatus.NOT_FOUND);
         await Promise.all(session.members.map(async (memberId) => {
-            const user = await this.userRepository.findOne({ _id: memberId.toString() });
+            const user = await this.userRepository.findOne({
+                _id: memberId.toString(),
+            });
             if (user !== null) {
                 await this.userRepository.findOneAndUpdate({ _id: memberId.toString() }, { currentSession: null, isCaptain: false });
             }
         }));
         await this.sessionRepository.findOneAndUpdate({
-            _id: session._id.toString()
+            _id: session._id.toString(),
         }, { captain: null, inProgress: false });
         return { message: 'Session ended successfully', session };
     }
@@ -1789,12 +2012,20 @@ let SessionsService = class SessionsService {
         if (session.isFull) {
             throw new common_2.CustomHttpException('Session is full', common_1.HttpStatus.BAD_REQUEST);
         }
-        const updatedSession = await this.sessionRepository.findOneAndUpdate({ _id: sessionId }, { $push: { members: userId }, $set: { isFull: session.members.length + 1 >= session.maxNumber } });
+        const updatedSession = await this.sessionRepository.findOneAndUpdate({ _id: sessionId }, {
+            $push: { members: userId },
+            $set: { isFull: session.members.length + 1 >= session.maxNumber },
+        });
         await this.userRepository.findOneAndUpdate({ _id: userId }, { currentSession: sessionId });
-        return { message: 'User successfully joined session', session: updatedSession };
+        return {
+            message: 'User successfully joined session',
+            session: updatedSession,
+        };
     }
     async leaveSession(userId, sessionId) {
-        const session = await this.sessionRepository.findOne({ _id: sessionId });
+        const session = await this.sessionRepository.findOne({
+            _id: sessionId,
+        });
         if (!session)
             throw new common_2.CustomHttpException('Session not found', common_1.HttpStatus.NOT_FOUND);
         const user = await this.userRepository.findOne({ _id: userId });
@@ -1806,8 +2037,13 @@ let SessionsService = class SessionsService {
                 $set: { isFull: session.members.length - 1 >= session.maxNumber },
             });
             await this.userRepository.findOneAndUpdate({ _id: userId }, { currentSession: null });
-            const updatedSession = await this.sessionRepository.findOne({ _id: sessionId });
-            return { message: 'User successfully left session', session: updatedSession };
+            const updatedSession = await this.sessionRepository.findOne({
+                _id: sessionId,
+            });
+            return {
+                message: 'User successfully left session',
+                session: updatedSession,
+            };
         }
         catch (error) {
             throw new common_2.CustomHttpException('Failed to leave session', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
@@ -1815,43 +2051,53 @@ let SessionsService = class SessionsService {
     }
     async viewSessionMembers(sessionId) {
         const session = await this.sessionRepository.findOneAndPopulate({
-            _id: sessionId
+            _id: sessionId,
         }, ['members']);
         if (session === null) {
-            throw new common_2.CustomHttpException("Session not found", common_1.HttpStatus.NOT_FOUND);
+            throw new common_2.CustomHttpException('Session not found', common_1.HttpStatus.NOT_FOUND);
         }
         if (!session.members || session.members.length === 0) {
-            throw new common_2.CustomHttpException("No members have joined yet", common_1.HttpStatus.NOT_FOUND);
+            throw new common_2.CustomHttpException('No members have joined yet', common_1.HttpStatus.NOT_FOUND);
         }
         const nicknames = session.members.map((member) => member.nickname);
         return nicknames;
     }
     async viewSession(sessionId) {
         const verifySession = await this.sessionRepository.findOne({
-            _id: sessionId
+            _id: sessionId,
         });
-        if (sessionId === null) {
-            throw new common_2.CustomHttpException("Session does not exist", common_1.HttpStatus.NOT_FOUND);
+        if (verifySession === null) {
+            throw new common_2.CustomHttpException('Session does not exist', common_1.HttpStatus.NOT_FOUND);
         }
-        return await this.sessionRepository.findRaw().findOne({
-            _id: sessionId
-        }).populate({
+        return await this.sessionRepository
+            .findRaw()
+            .findOne({
+            _id: sessionId,
+        })
+            .populate({
             path: 'members',
-            select: "nickname -_id"
-        }).populate({
-            path: "members",
-            select: "nickname -_id"
+            select: 'nickname -_id',
+        })
+            .populate({
+            path: 'members',
+            select: 'nickname -_id',
         });
     }
     async viewAllSessions() {
-        return this.sessionRepository.findAndPopulate({ finished: false }, ['captain', 'members', 'location']);
+        return this.sessionRepository.findAndPopulate({ finished: false }, [
+            'captain',
+            'members',
+            'location',
+        ]);
     }
     async deleteSession(sessionId) {
-        const session = await this.sessionRepository.findOne({ _id: sessionId });
+        const session = await this.sessionRepository.findOne({
+            _id: sessionId,
+        });
         if (!session)
             throw new common_2.CustomHttpException('Session not found', common_1.HttpStatus.NOT_FOUND);
         const updateQuery = {
-            $set: { currentSession: null, isCaptain: false }
+            $set: { currentSession: null, isCaptain: false },
         };
         await this.userRepository.updateMany({ _id: { $in: session.members } }, updateQuery);
         await this.sessionRepository.delete(session._id);
@@ -2008,15 +2254,11 @@ exports.SetsModule = SetsModule = __decorate([
             mongoose_1.MongooseModule.forFeature([
                 { name: common_1.Set.name, schema: common_1.SetSchema },
                 { name: common_1.Session.name, schema: common_1.SessionSchema },
-            ])
+            ]),
         ],
         controllers: [sets_controller_1.SetsController],
-        providers: [
-            sets_repository_1.SetRepository,
-            sets_service_1.SetsService,
-            sessions_repository_1.SessionRepository,
-        ],
-        exports: [sets_service_1.SetsService]
+        providers: [sets_repository_1.SetRepository, sets_service_1.SetsService, sessions_repository_1.SessionRepository],
+        exports: [sets_service_1.SetsService],
     })
 ], SetsModule);
 
@@ -2094,16 +2336,32 @@ let SetsService = class SetsService {
         this.setRepository = setRepository;
         this.sessionRepository = sessionRepository;
         this.setNames = [
-            "Team 7", "Royal Knights", "Bouillon Fc", "Sepulcher FC", "Akatsuki",
-            "Amapiano FC", "Grey Fc", "Dynasty", "Elon Musk Fc", "J-boys FC",
-            "Sporty9ja", "Wizkidfc", "30BG", "Valdomites", "OV-Hoes",
-            "Outsiders", "Celeboys", "Azonto FC", "Akara warriors", "Egusi FC"
+            'Team 7',
+            'Royal Knights',
+            'Bouillon Fc',
+            'Sepulcher FC',
+            'Akatsuki',
+            'Amapiano FC',
+            'Grey Fc',
+            'Dynasty',
+            'Elon Musk Fc',
+            'J-boys FC',
+            'Sporty9ja',
+            'Wizkidfc',
+            '30BG',
+            'Valdomites',
+            'OV-Hoes',
+            'Outsiders',
+            'Celeboys',
+            'Azonto FC',
+            'Akara warriors',
+            'Egusi FC',
         ];
     }
     async allocateMembers(session, createdSets) {
         const members = session.members;
-        const pickedMembers = createdSets.flatMap(set => set.players);
-        const availablePlayers = members.filter(member => !pickedMembers.includes(member));
+        const pickedMembers = createdSets.flatMap((set) => set.players);
+        const availablePlayers = members.filter((member) => !pickedMembers.includes(member));
         if (availablePlayers.length === 0)
             return;
         for (let i = 0; i < members.length; i++) {
@@ -2119,39 +2377,47 @@ let SetsService = class SetsService {
             throw new common_2.CustomHttpException('Session not found', common_1.HttpStatus.NOT_FOUND);
         }
         const existingSets = await this.setRepository.find({ session: sessionId });
-        const usedNames = existingSets.map(set => set.name);
-        const availableNames = this.setNames.filter(name => !usedNames.includes(name));
+        const usedNames = existingSets.map((set) => set.name);
+        const availableNames = this.setNames.filter((name) => !usedNames.includes(name));
         if (availableNames.length < session.setNumber) {
             throw new common_2.CustomHttpException('Not enough unique names available for the session', common_1.HttpStatus.BAD_REQUEST);
         }
-        const count = await this.setRepository.findRaw().countDocuments({ session: sessionId });
+        const count = await this.setRepository
+            .findRaw()
+            .countDocuments({ session: sessionId });
         if (session.maxNumber >= count) {
             throw new common_2.CustomHttpException('Set already created', common_1.HttpStatus.BAD_REQUEST);
         }
-        const setData = Array(session.setNumber).fill(null).map(() => {
+        const setData = Array(session.setNumber)
+            .fill(null)
+            .map(() => {
             const randomIndex = Math.floor(Math.random() * availableNames.length);
             const randomName = availableNames.splice(randomIndex, 1)[0];
             return {
                 session: session._id,
                 name: randomName,
-                players: []
+                players: [],
             };
         });
         const createdSets = await this.setRepository.insertMany(setData);
         await this.allocateMembers(session, createdSets);
         return {
             message: 'Sets created successfully',
-            sets: createdSets
+            sets: createdSets,
         };
     }
     async viewAllSets() {
         return this.setRepository.findAndPopulate({}, ['players']);
     }
     async viewSetForSession(sessionId) {
-        return this.setRepository.findAndPopulate({ session: sessionId }, ['players']);
+        return this.setRepository.findAndPopulate({ session: sessionId }, [
+            'players',
+        ]);
     }
     async viewSingleSet(setId) {
-        const set = await this.setRepository.findAndPopulate({ _id: setId }, ['players']);
+        const set = await this.setRepository.findAndPopulate({ _id: setId }, [
+            'players',
+        ]);
         if (!set) {
             throw new common_2.CustomHttpException('Set not found', common_1.HttpStatus.NOT_FOUND);
         }
@@ -2261,13 +2527,13 @@ class ResetPasswordDto {
 }
 exports.ResetPasswordDto = ResetPasswordDto;
 __decorate([
-    (0, class_validator_1.IsEmail)({}, { message: "Invalid email format" }),
+    (0, class_validator_1.IsEmail)({}, { message: 'Invalid email format' }),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], ResetPasswordDto.prototype, "email", void 0);
 __decorate([
     (0, class_validator_1.IsNotEmpty)(),
-    (0, class_validator_1.MinLength)(6, { message: "Password must be at least 6 characters long" }),
+    (0, class_validator_1.MinLength)(6, { message: 'Password must be at least 6 characters long' }),
     __metadata("design:type", String)
 ], ResetPasswordDto.prototype, "newPassword", void 0);
 __decorate([
@@ -2297,13 +2563,12 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var _a, _b, _c, _d, _e, _f;
+var _a, _b, _c, _d, _e;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.UsersController = void 0;
 const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
 const users_service_1 = __webpack_require__(/*! ./users.service */ "./src/users/users.service.ts");
 const user_dto_1 = __webpack_require__(/*! ./dto/user.dto */ "./src/users/dto/user.dto.ts");
-const common_2 = __webpack_require__(/*! @app/common */ "./libs/common/src/index.ts");
 let UsersController = class UsersController {
     constructor(usersService) {
         this.usersService = usersService;
@@ -2317,7 +2582,7 @@ let UsersController = class UsersController {
     async verifyOtp(data) {
         return this.usersService.verifyOtp(data);
     }
-    async resetPassword(data, user) {
+    async resetPassword(data) {
         return this.usersService.resetPassword(data);
     }
 };
@@ -2346,9 +2611,8 @@ __decorate([
 __decorate([
     (0, common_1.Put)('reset-password'),
     __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_2.CurrentUser)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [typeof (_e = typeof user_dto_1.ResetPasswordDto !== "undefined" && user_dto_1.ResetPasswordDto) === "function" ? _e : Object, typeof (_f = typeof common_2.User !== "undefined" && common_2.User) === "function" ? _f : Object]),
+    __metadata("design:paramtypes", [typeof (_e = typeof user_dto_1.ResetPasswordDto !== "undefined" && user_dto_1.ResetPasswordDto) === "function" ? _e : Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "resetPassword", null);
 exports.UsersController = UsersController = __decorate([
@@ -2390,9 +2654,7 @@ exports.UsersModule = UsersModule;
 exports.UsersModule = UsersModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            mongoose_1.MongooseModule.forFeature([
-                { name: common_2.User.name, schema: common_2.UserSchema }
-            ])
+            mongoose_1.MongooseModule.forFeature([{ name: common_2.User.name, schema: common_2.UserSchema }]),
         ],
         controllers: [users_controller_1.UsersController],
         providers: [
@@ -2402,9 +2664,9 @@ exports.UsersModule = UsersModule = __decorate([
             local_strategy_1.UserLocalStrategy,
             jwt_strategy_1.UsersJwtStrategy,
             jwt_1.JwtService,
-            common_2.MailerService
+            common_2.MailerService,
         ],
-        exports: [users_service_1.UsersService]
+        exports: [users_service_1.UsersService],
     })
 ], UsersModule);
 
@@ -2485,7 +2747,7 @@ let UsersService = UsersService_1 = class UsersService {
         this.mailService = mailService;
         this.logger = new common_1.Logger(UsersService_1.name);
     }
-    async registerUser({ firstName, lastName, nickname, email, password, phoneNumber, address, position, location }) {
+    async registerUser({ firstName, lastName, nickname, email, password, phoneNumber, address, position, location, }) {
         const formattedPhone = (0, common_2.internationalisePhoneNumber)(phoneNumber);
         await this.checkExistingUser(phoneNumber, email, nickname);
         const payload = {
@@ -2496,7 +2758,7 @@ let UsersService = UsersService_1 = class UsersService {
             lastName,
             firstName,
             location,
-            position
+            position,
         };
         try {
             const user = await this.usersRepository.create(payload);
@@ -2507,56 +2769,64 @@ let UsersService = UsersService_1 = class UsersService {
         }
     }
     async forgetPassword(data) {
-        const user = await this.usersRepository.findOne({ email: data.email });
+        const user = await this.usersRepository.findOne({
+            email: data.email,
+        });
         if (user == null) {
             throw new common_2.CustomHttpException('User with email does not exist', common_1.HttpStatus.NOT_FOUND);
         }
         const otp = crypto.randomInt(100000, 999999);
         await this.usersRepository.findOneAndUpdate({
-            _id: user._id.toString()
+            _id: user._id.toString(),
         }, {
             otp,
             otpVerified: false,
-            otpExpiration: new Date(Date.now() + 15 * 60 * 1000)
+            otpExpiration: new Date(Date.now() + 15 * 60 * 1000),
         });
         await this.mailService.sendMail(user.email, 'PASSWORD RESET OTP', `Your OTP for password reset is ${otp}. It is valid for 15 mins`);
     }
     async verifyOtp(data) {
-        const user = await this.usersRepository.findOne({ email: data.email });
+        const user = await this.usersRepository.findOne({
+            email: data.email,
+        });
         if (user == null) {
             throw new common_2.CustomHttpException('User with email does not exist', common_1.HttpStatus.NOT_FOUND);
         }
         if (user.otp !== data.otp || user.otpExpiration < new Date()) {
-            throw new common_2.CustomHttpException("Invalid or expired OTP", common_1.HttpStatus.UNAUTHORIZED);
+            throw new common_2.CustomHttpException('Invalid or expired OTP', common_1.HttpStatus.UNAUTHORIZED);
         }
         await this.usersRepository.findOneAndUpdate({
-            _id: user._id.toString()
+            _id: user._id.toString(),
         }, { otpVerified: true });
-        return { message: "OTP verified, proceed to reset password" };
+        return { message: 'OTP verified, proceed to reset password' };
     }
     async resetPassword(dto) {
         const user = await this.usersRepository.findOne({ email: dto.email });
         if (user == null)
-            throw new common_2.CustomHttpException("User not found", common_1.HttpStatus.NOT_FOUND);
+            throw new common_2.CustomHttpException('User not found', common_1.HttpStatus.NOT_FOUND);
         if (!user.otpVerified)
-            throw new common_2.CustomHttpException("OTP not verified", common_1.HttpStatus.UNAUTHORIZED);
+            throw new common_2.CustomHttpException('OTP not verified', common_1.HttpStatus.UNAUTHORIZED);
         if (dto.newPassword !== dto.confirmPassword) {
-            throw new common_2.CustomHttpException("Passwords do not match", common_1.HttpStatus.CONFLICT);
+            throw new common_2.CustomHttpException('Passwords do not match', common_1.HttpStatus.CONFLICT);
         }
         await this.usersRepository.findOneAndUpdate({
-            _id: user._id.toString()
+            _id: user._id.toString(),
         }, {
             otp: null,
             otpVerified: false,
             otpExpiration: null,
-            password: await bcrypt.hash(dto.newPassword, 10)
+            password: await bcrypt.hash(dto.newPassword, 10),
         });
-        return { message: "Password reset successful" };
+        return { message: 'Password reset successful' };
     }
     async checkExistingUser(phoneNumber, email, nickname) {
-        const _phone = await this.usersRepository.findOne({ phoneNumber });
+        const _phone = await this.usersRepository.findOne({
+            phoneNumber,
+        });
         const _email = await this.usersRepository.findOne({ email });
-        const _nickname = await this.usersRepository.findOne({ nickname });
+        const _nickname = await this.usersRepository.findOne({
+            nickname,
+        });
         if (_phone !== null) {
             throw new common_2.CustomHttpException('Phone Number is  already registered.', common_1.HttpStatus.CONFLICT);
         }
@@ -2580,7 +2850,7 @@ let UsersService = UsersService_1 = class UsersService {
         catch (error) {
             this.logger.error({
                 message: `Failed to fetch user profile ${id} `,
-                error
+                error,
             });
             if (error instanceof common_1.NotFoundException) {
                 throw new common_2.CustomHttpException('No user found with the given ID', common_1.HttpStatus.UNAUTHORIZED);
@@ -2592,7 +2862,7 @@ let UsersService = UsersService_1 = class UsersService {
     }
     async validateUser(email, password) {
         const user = await this.usersRepository.findOne({
-            email: email.toLowerCase()
+            email: email.toLowerCase(),
         });
         if (user === null) {
             throw new common_2.CustomHttpException('User with email is not found', common_1.HttpStatus.NOT_FOUND);
