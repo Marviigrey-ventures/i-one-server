@@ -32,6 +32,9 @@ export class User extends AbstractDocument {
   @Prop({ default: false })
   isCaptain: boolean;
 
+  @Prop({ default: false })
+  isOwner: boolean;
+
   @Prop({ type: Types.ObjectId, ref: 'Session', default: null })
   currentSession: string;
 

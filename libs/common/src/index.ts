@@ -11,6 +11,7 @@ export * from './schemas/location.schema';
 export * from './utils/phone.number';
 export * from './typings/global.interface';
 export * from './decorators/currentUser.decorator';
+export * from './decorators/isOwner.decorator';
 export * from './filters/http-exception.filter copy';
 export * from './utils/nodemailer';
 export * from './utils/phone.number';

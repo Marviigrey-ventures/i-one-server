@@ -26,6 +26,37 @@ exports.CurrentUser = (0, common_1.createParamDecorator)((_data, context) => get
 
 /***/ }),
 
+/***/ "./libs/common/src/decorators/isOwner.decorator.ts":
+/*!*********************************************************!*\
+  !*** ./libs/common/src/decorators/isOwner.decorator.ts ***!
+  \*********************************************************/
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.IsOwner = void 0;
+exports.getOwnerByContext = getOwnerByContext;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+function getOwnerByContext(context) {
+    if (context.getType() === 'http') {
+        return context.switchToHttp().getRequest()?.user;
+    }
+    return context.switchToRpc().getData()?.user;
+}
+exports.IsOwner = (0, common_1.createParamDecorator)((ctx) => {
+    const user = getOwnerByContext(ctx);
+    if (user?.isOwner === true) {
+        return user;
+    }
+    if (user === undefined || !user?.isOwner) {
+        throw new common_1.ForbiddenException('You do not have the required clearance to access this resource');
+    }
+    return user;
+});
+
+
+/***/ }),
+
 /***/ "./libs/common/src/filters/http-exception.filter copy.ts":
 /*!***************************************************************!*\
   !*** ./libs/common/src/filters/http-exception.filter copy.ts ***!
@@ -137,6 +168,7 @@ __exportStar(__webpack_require__(/*! ./schemas/location.schema */ "./libs/common
 __exportStar(__webpack_require__(/*! ./utils/phone.number */ "./libs/common/src/utils/phone.number.ts"), exports);
 __exportStar(__webpack_require__(/*! ./typings/global.interface */ "./libs/common/src/typings/global.interface.ts"), exports);
 __exportStar(__webpack_require__(/*! ./decorators/currentUser.decorator */ "./libs/common/src/decorators/currentUser.decorator.ts"), exports);
+__exportStar(__webpack_require__(/*! ./decorators/isOwner.decorator */ "./libs/common/src/decorators/isOwner.decorator.ts"), exports);
 __exportStar(__webpack_require__(/*! ./filters/http-exception.filter copy */ "./libs/common/src/filters/http-exception.filter copy.ts"), exports);
 __exportStar(__webpack_require__(/*! ./utils/nodemailer */ "./libs/common/src/utils/nodemailer.ts"), exports);
 __exportStar(__webpack_require__(/*! ./utils/phone.number */ "./libs/common/src/utils/phone.number.ts"), exports);
@@ -589,6 +621,10 @@ __decorate([
     (0, mongoose_1.Prop)({ default: false }),
     __metadata("design:type", Boolean)
 ], User.prototype, "isCaptain", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ default: false }),
+    __metadata("design:type", Boolean)
+], User.prototype, "isOwner", void 0);
 __decorate([
     (0, mongoose_1.Prop)({ type: mongoose_2.Types.ObjectId, ref: 'Session', default: null }),
     __metadata("design:type", String)
@@ -1215,6 +1251,107 @@ exports.DatabaseModule = DatabaseModule = __decorate([
 
 /***/ }),
 
+/***/ "./src/locations/dto/location.dto.ts":
+/*!*******************************************!*\
+  !*** ./src/locations/dto/location.dto.ts ***!
+  \*******************************************/
+/***/ ((__unused_webpack_module, exports) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ViewNearbyLocationsDto = exports.CreateLocationDto = void 0;
+class CreateLocationDto {
+}
+exports.CreateLocationDto = CreateLocationDto;
+class ViewNearbyLocationsDto {
+}
+exports.ViewNearbyLocationsDto = ViewNearbyLocationsDto;
+
+
+/***/ }),
+
+/***/ "./src/locations/locations.controller.ts":
+/*!***********************************************!*\
+  !*** ./src/locations/locations.controller.ts ***!
+  \***********************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var _a, _b, _c, _d, _e;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.LocationsController = void 0;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const jwt_guard_1 = __webpack_require__(/*! src/auth/guards/jwt.guard */ "./src/auth/guards/jwt.guard.ts");
+const locations_service_1 = __webpack_require__(/*! ./locations.service */ "./src/locations/locations.service.ts");
+const location_dto_1 = __webpack_require__(/*! ./dto/location.dto */ "./src/locations/dto/location.dto.ts");
+const common_2 = __webpack_require__(/*! @app/common */ "./libs/common/src/index.ts");
+let LocationsController = class LocationsController {
+    constructor(locationsService) {
+        this.locationsService = locationsService;
+    }
+    async viewAllLocations() {
+        return this.locationsService.viewAllLocations();
+    }
+    async registerLocation(user, data) {
+        return this.locationsService.registerLocation(data);
+    }
+    async getNearbyLocations(data) {
+        return this.locationsService.viewNearbyLocations(data);
+    }
+    async getMyLocation(user) {
+        return this.locationsService.getMyLocation(user._id.toString());
+    }
+};
+exports.LocationsController = LocationsController;
+__decorate([
+    (0, common_1.Get)('all'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], LocationsController.prototype, "viewAllLocations", null);
+__decorate([
+    (0, common_1.Post)('register'),
+    __param(0, (0, common_2.IsOwner)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_b = typeof common_2.User !== "undefined" && common_2.User) === "function" ? _b : Object, typeof (_c = typeof location_dto_1.CreateLocationDto !== "undefined" && location_dto_1.CreateLocationDto) === "function" ? _c : Object]),
+    __metadata("design:returntype", Promise)
+], LocationsController.prototype, "registerLocation", null);
+__decorate([
+    (0, common_1.Get)('nearby'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_d = typeof location_dto_1.ViewNearbyLocationsDto !== "undefined" && location_dto_1.ViewNearbyLocationsDto) === "function" ? _d : Object]),
+    __metadata("design:returntype", Promise)
+], LocationsController.prototype, "getNearbyLocations", null);
+__decorate([
+    (0, common_1.Get)(),
+    __param(0, (0, common_2.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [typeof (_e = typeof common_2.User !== "undefined" && common_2.User) === "function" ? _e : Object]),
+    __metadata("design:returntype", Promise)
+], LocationsController.prototype, "getMyLocation", null);
+exports.LocationsController = LocationsController = __decorate([
+    (0, common_1.Controller)('location'),
+    (0, common_1.UseGuards)(jwt_guard_1.JwtAuthGuard),
+    __metadata("design:paramtypes", [typeof (_a = typeof locations_service_1.LocationsService !== "undefined" && locations_service_1.LocationsService) === "function" ? _a : Object])
+], LocationsController);
+
+
+/***/ }),
+
 /***/ "./src/locations/locations.module.ts":
 /*!*******************************************!*\
   !*** ./src/locations/locations.module.ts ***!
@@ -1230,12 +1367,28 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.LocationsModule = void 0;
-const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const common_1 = __webpack_require__(/*! @app/common */ "./libs/common/src/index.ts");
+const common_2 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const mongoose_1 = __webpack_require__(/*! @nestjs/mongoose */ "@nestjs/mongoose");
+const locations_controller_1 = __webpack_require__(/*! ./locations.controller */ "./src/locations/locations.controller.ts");
+const locations_service_1 = __webpack_require__(/*! ./locations.service */ "./src/locations/locations.service.ts");
+const locations_repository_1 = __webpack_require__(/*! ./locations.repository */ "./src/locations/locations.repository.ts");
+const users_repository_1 = __webpack_require__(/*! src/users/users.repository */ "./src/users/users.repository.ts");
 let LocationsModule = class LocationsModule {
 };
 exports.LocationsModule = LocationsModule;
 exports.LocationsModule = LocationsModule = __decorate([
-    (0, common_1.Module)({})
+    (0, common_2.Module)({
+        imports: [
+            mongoose_1.MongooseModule.forFeature([
+                { name: common_1.Location.name, schema: common_1.LocationSchema },
+                { name: common_1.User.name, schema: common_1.UserSchema },
+            ]),
+        ],
+        controllers: [locations_controller_1.LocationsController],
+        providers: [locations_service_1.LocationsService, locations_repository_1.LocationRepository, users_repository_1.UserRepository],
+        exports: [locations_service_1.LocationsService],
+    })
 ], LocationsModule);
 
 
@@ -1280,6 +1433,89 @@ exports.LocationRepository = LocationRepository = LocationRepository_1 = __decor
     __param(0, (0, mongoose_1.InjectModel)(common_2.Location.name)),
     __metadata("design:paramtypes", [typeof (_a = typeof mongoose_2.Model !== "undefined" && mongoose_2.Model) === "function" ? _a : Object])
 ], LocationRepository);
+
+
+/***/ }),
+
+/***/ "./src/locations/locations.service.ts":
+/*!********************************************!*\
+  !*** ./src/locations/locations.service.ts ***!
+  \********************************************/
+/***/ (function(__unused_webpack_module, exports, __webpack_require__) {
+
+
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var _a, _b;
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.LocationsService = void 0;
+const common_1 = __webpack_require__(/*! @nestjs/common */ "@nestjs/common");
+const locations_repository_1 = __webpack_require__(/*! ./locations.repository */ "./src/locations/locations.repository.ts");
+const users_repository_1 = __webpack_require__(/*! ../users/users.repository */ "./src/users/users.repository.ts");
+const common_2 = __webpack_require__(/*! @app/common */ "./libs/common/src/index.ts");
+let LocationsService = class LocationsService {
+    constructor(locationRepository, userRepository) {
+        this.locationRepository = locationRepository;
+        this.userRepository = userRepository;
+    }
+    async registerLocation(locationData) {
+        const { name, address, location } = locationData;
+        const alreadyExists = await this.locationRepository.findOne({
+            'location.coordinates': {
+                $near: {
+                    $geometry: {
+                        type: 'Point',
+                        coordinates: location.coordinates,
+                    },
+                    $maxDistance: 1,
+                },
+            },
+        });
+        if (alreadyExists) {
+            throw new common_2.CustomHttpException('Location already registered', common_1.HttpStatus.CONFLICT);
+        }
+        return await this.locationRepository.create({ name, address, location });
+    }
+    async viewAllLocations() {
+        return await this.locationRepository.find({});
+    }
+    async viewNearbyLocations(locationData) {
+        const { longitude, latitude } = locationData;
+        return await this.locationRepository.find({
+            'location.coordinates': {
+                $near: {
+                    $geometry: {
+                        type: 'Point',
+                        coordinates: [parseFloat(longitude), parseFloat(latitude)],
+                    },
+                    $maxDistance: 5000,
+                },
+            },
+        });
+    }
+    async getMyLocation(userId) {
+        const user = await this.userRepository.findOne({ _id: userId });
+        if (!user) {
+            throw new common_2.CustomHttpException('User not found', common_1.HttpStatus.NOT_FOUND);
+        }
+        const location = user.locationInfo;
+        const address = user.locationInfo.address;
+        const coordinates = user.locationInfo.location.coordinates;
+        return { locationInfo: location, address, coordinates };
+    }
+};
+exports.LocationsService = LocationsService;
+exports.LocationsService = LocationsService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [typeof (_a = typeof locations_repository_1.LocationRepository !== "undefined" && locations_repository_1.LocationRepository) === "function" ? _a : Object, typeof (_b = typeof users_repository_1.UserRepository !== "undefined" && users_repository_1.UserRepository) === "function" ? _b : Object])
+], LocationsService);
 
 
 /***/ }),
@@ -1404,15 +1640,11 @@ exports.MatchesModule = MatchesModule = __decorate([
         imports: [
             mongoose_1.MongooseModule.forFeature([
                 { name: common_1.Match.name, schema: common_1.MatchSchema },
-                { name: common_1.Set.name, schema: common_1.SetSchema }
+                { name: common_1.Set.name, schema: common_1.SetSchema },
             ]),
         ],
         controllers: [matches_controller_1.MatchesController],
-        providers: [
-            matches_service_1.MatchesService,
-            matches_repository_1.MatchRepository,
-            sets_repository_1.SetRepository
-        ],
+        providers: [matches_service_1.MatchesService, matches_repository_1.MatchRepository, sets_repository_1.SetRepository],
         exports: [matches_service_1.MatchesService],
     })
 ], MatchesModule);
@@ -1500,11 +1732,13 @@ let MatchesService = class MatchesService {
             throw new common_2.CustomHttpException('No sets found for this session', common_1.HttpStatus.NOT_FOUND);
         }
         const expectedLength = sets.length / 2;
-        let availableSets = sets.map((set) => set._id);
+        const availableSets = sets.map((set) => set._id);
         if (availableSets.length % 2 !== 0) {
             throw new common_2.CustomHttpException('Cannot create pairs with an odd number of sets', common_1.HttpStatus.BAD_REQUEST);
         }
-        const existingMatchUp = await this.matchRepository.find({ session: sessionId });
+        const existingMatchUp = await this.matchRepository.find({
+            session: sessionId,
+        });
         const alreadyMatched = existingMatchUp.length >= expectedLength;
         if (alreadyMatched) {
             throw new common_2.CustomHttpException('Teams already matched for this session', common_1.HttpStatus.BAD_REQUEST);
