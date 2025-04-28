@@ -32,6 +32,15 @@ const swaggerOptions = {
       { url: "https://i-one-server.onrender.com" },
       { url: "http://localhost:4500" },
     ],
+    components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: "http",
+            scheme: "bearer",
+            bearerFormat: "JWT",
+          }
+        }
+    },
   },
   apis: ["./routes/*.js"],
 };

@@ -65,17 +65,17 @@ router.route("/:matchid/startmatch").post(authenticate, startMatchInSession);
 
 
 
- /**
- * @swagger
- * /i-one/match/:matchid/viewmatchdetails:
- *   post:
- *     tags: [User]
- *     summary: "View Details about one match"
- *     responses: 
- *         200: 
- *           description:returns the match as a response    
- * 
- */ 
+//  /**
+//  * @swagger
+//  * /i-one/match/:matchid/viewmatchdetails:
+//  *   post:
+//  *     tags: [User]
+//  *     summary: "View Details about one match"
+//  *     responses: 
+//  *         200: 
+//  *           description:returns the match as a response    
+//  * 
+//  */ 
 router.route("/:matchid/viewmatchdetails").get(authenticate, viewMatchDetails);
 
 
