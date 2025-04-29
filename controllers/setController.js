@@ -53,7 +53,7 @@ const createSet = async (req, res) => {
 
     const session = await Session.findById(sessionid);
 
-    if (!session) return res.status(409).json({ message: "Session not found" });
+    if (!session) return res.status(404).json({ message: "Session not found" });
 
     const { setNumber } = session;
 

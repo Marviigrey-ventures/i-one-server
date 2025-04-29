@@ -53,6 +53,11 @@ const startSession = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(locationid))
       return res.status(400).json({ message: "Object is not valid" });
 
+    const locationExists = await Location.findById(id);
+
+    if (!locationExists)
+      return res.status(404).json({ message: "Location does not exist" });
+
     if (!locationid) return res.status(404).json({ message: "id is rquired" });
 
     const user = await User.findById(userid);
