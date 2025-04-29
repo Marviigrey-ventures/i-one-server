@@ -29,7 +29,7 @@ const swaggerOptions = {
       description: "API documentation for i-one-server",
     },
     servers: [
-      { url: "https://i-one-server.onrender.com" },
+      { url: "https://i-one-server-fijh.onrender.com" },
       { url: "http://localhost:4500" },
     ],
     components: {
