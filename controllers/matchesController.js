@@ -64,7 +64,7 @@ const matchUp = async (req, res) => {
     res.status(500).json({ message: "Internal Server error" });
     console.log(error);
   }
-  jn;
+
 };
 
 const viewSessionMatchUps = async (req, res) => {
