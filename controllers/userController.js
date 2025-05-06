@@ -6,81 +6,98 @@ const crypto = require("crypto");
 const sendMail = require("../utils/sendEmail");
 
 const registerUser = async (req, res) => {
-
   try {
+    const {
+      firstname,
+      lastname,
+      email,
+      nickname,
+      password,
+      isOwner,
+      address,
+      locationInfo,
+      position,
+      phoneNumber,
+    } = req.body;
 
-    const { email, nickname, password, isOwner, address, location, position, phoneNumber } = req.body;
-
-    if (!email || !password || !nickname || !address || !location || position || phoneNumber)
+    if (
+      !firstname ||
+      !lastname ||
+      !email ||
+      !password ||
+      !nickname ||
+      !locationInfo ||
+      !position ||
+      !phoneNumber
+    )
       return res.status(400).json({ message: "all fields must be filled" });
-  
-    if (!isOWner)
+
+    if (!isOwner)
       return res.status(400).json({ message: "Specify your role as a user" });
-  
-    
-  
-  
+
     const isEmail = validator.isEmail(email);
     if (!isEmail) return res.status(400).json({ message: "invalid Email" });
-  
+
     const userEmailExists = await User.findOne({ email });
     if (userEmailExists)
       return res.status(409).json({ message: "email already in use" });
-  
+
     const nicknameExists = await User.findOne({ nickname });
-  
+
     if (nicknameExists)
-      res.status(400).json({ message: "Nickname already in use" });
-  
+     return  res.status(400).json({ message: "Nickname already in use" });
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-  
+
     const newUser = await User.create({
+      firstname,
+      lastname,
       email,
       nickname,
       password: hashedPassword,
       isOwner,
       address,
-      location,
+      locationInfo,
       position,
-      phoneNumber
+      phoneNumber,
     });
-
-   const token =  createToken(res, newUser._id);
+    
+    const token = createToken(res, newUser._id);
     res.status(201).json({
       email: newUser.email,
       nickname: newUser.nickname,
       id: newUser._id,
       isAdmin: newUser.isAdmin,
-      token
+      token,
     });
   } catch (err) {
     res.status(500).json({ message: "Internal Server Error" });
+    console.error(err); // This will log the actual error to the console
+
   }
 };
 
 const authUser = async (req, res) => {
- 
-
   try {
     const { email, password } = req.body;
 
     if (!email || !password)
       return res.status(400).json({ message: "Input email and password" });
-  
+
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: "User not found" });
-  
+
     const validPassword = await bcrypt.compare(password, user.password);
-  
+
     if (!validPassword)
       return res.status(404).json({ message: "Check email or password" });
-   const token =  createToken(res, user._id);
+    const token = createToken(res, user._id);
     res.status(200).json({
       email: user.email,
       isAdmin: user.isAdmin,
       id: user._id,
-      token
+      token,
     });
   } catch (error) {
     res.status(500).json({ message: "Internal Server Error" });
@@ -177,7 +194,7 @@ const resetPassword = async (req, res) => {
 };
 
 const testsession = async (req, res) => {
-  const user = await User.find({}).sort({createdAt: -1});
+  const user = await User.find({}).sort({ createdAt: -1 });
 
   res.status(200).json(user);
 };

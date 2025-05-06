@@ -29,7 +29,6 @@ const { authenticate } = require("../middleware/authUser");
  *               - nickname
  *               - password
  *               - isOwner
- *               - address
  *               - location
  *               - position
  *               - phoneNumber
@@ -52,10 +51,7 @@ const { authenticate } = require("../middleware/authUser");
  *               isOwner:
  *                 type: boolean
  *                 example: true
- *               address:
- *                 type: string
- *                 example: "123 Main St, City, Country"
- *               location:
+ *               locationInfo:
  *                 type: object
  *                 properties:
  *                   address:
@@ -75,7 +71,7 @@ const { authenticate } = require("../middleware/authUser");
  *                         example: [-74.006, 40.7128]
  *               position:
  *                 type: string
- *                 example: Captain
+ *                 example: MF
  *               phoneNumber:
  *                 type: string
  *                 example: "+1234567890"
@@ -117,7 +113,7 @@ router.route("/register").post(registerUser);
  * /i-one/user/auth:
  *   post:
  *     tags:
- *       -User
+ *       - User
  *     summary: "Authenticate user and return token"
  *     requestBody:
  *       required: true
@@ -170,7 +166,7 @@ router.route("/auth").post(authUser);
  * /i-one/user/logout:
  *   post:
  *     tags:
- *       -User
+ *       - User
  *     summary: "Logout the currently authenticated user"
  *     security:
  *       - bearerAuth: []
