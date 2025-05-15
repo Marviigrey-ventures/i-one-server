@@ -1,12 +1,8 @@
 const corsOptions = {
   origin: function (origin, callback) {
-    if (origin) {
-      callback(null, origin); // allow all origins that send an Origin header
-    } else {
-      callback(new Error('Origin not allowed'));
-    }
+    // Allow all origins including Postman/no-origin tools
+    callback(null, origin || true); 
   },
   credentials: true,
   optionsSuccessStatus: 200
 };
-module.exports = corsOptions
