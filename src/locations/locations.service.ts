@@ -118,15 +118,16 @@ export class LocationsService {
         { status: LOCATION_STATUS.ACTIVE },
         { status: { $exists: false } },
       ],
-      'location.coordinates': {
-        $near: {
-          $geometry: {
-            type: 'Point',
-            coordinates: [lng, lat],
-          },
-          $maxDistance: 5000,
-        },
-      },
+      //commented out near location stuff 
+      // 'location.coordinates': {
+      //   $near: {
+      //     $geometry: {
+      //       type: 'Point',
+      //       coordinates: [lng, lat],
+      //     },
+      //     $maxDistance: 5000,
+      //   },
+      // },
     });
   }
 
