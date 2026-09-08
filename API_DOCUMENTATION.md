@@ -631,6 +631,36 @@ Get locations near a coordinate, sorted by proximity.
 
 ---
 
+### GET /location/search
+Search registered locations by name.
+
+**Auth required**: Yes (JWT cookie)
+
+**Query Parameters**:
+- `name` (string, required) — full or partial location name, case-insensitive
+
+**Example**: `GET /location/search?name=lekki`
+
+**Notes**:
+- Exact name matches (case/whitespace-insensitive) are served from a Redis cache — O(1), and consistent across all horizontally-scaled server instances since the cache is Redis, not per-process memory. Cache entries are written on location create and invalidated on any update to that location (pitch condition, opening hours, pricing); a 1-hour TTL is a safety net on top of that.
+- If there's no exact cache/DB hit, falls back to a prefix search against an indexed, lowercased copy of `name` (`nameLower`) — index-backed, not a full collection scan, but not O(1). Capped to 10 results.
+- Only `ACTIVE` locations (or locations with no `status` set) are returned.
+
+**Success Response** `200 OK`:
+```json
+{
+  "exact": true,
+  "cached": true,
+  "results": [ { ...locationDocument } ]
+}
+```
+- `exact: false` means the results (if any) came from the partial/prefix fallback rather than an exact match.
+
+**Error Responses**:
+- `400` — `name` query parameter missing or blank
+
+---
+
 ### GET /location
 Get the current user's own location record.
 

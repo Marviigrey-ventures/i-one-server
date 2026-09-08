@@ -64,6 +64,11 @@ export class LocationsController {
     ) {
       return this.locationsService.viewNearbyLocations(lng, lat);
     }
+
+    @Get('search')
+    async searchLocationsByName(@Query('name') name: string) {
+      return this.locationsService.searchLocationsByName(name);
+    }
     
     @Get()
     async getMyLocation(@CurrentUser() user: User) {

@@ -165,8 +165,10 @@ async function seed() {
   });
 
   // 3. Create a location owned by that user
+  const locationName = `${faker.location.city()} Sports Complex`;
   const location = await LocationModel.create({
-    name: `${faker.location.city()} Sports Complex`,
+    name: locationName,
+    nameLower: locationName.trim().toLowerCase(),
     address: faker.location.streetAddress(),
     pitchPhoto: 'https://example.com/pitch.jpg',
     friendly: true,

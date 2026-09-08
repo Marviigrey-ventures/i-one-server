@@ -14,6 +14,12 @@ export class Location extends AbstractDocument {
   @Prop({ required: true, type: String })
   name: string;
 
+  // Lowercased, trimmed copy of `name` kept in sync at write time so name
+  // search can hit an index directly instead of a case-insensitive regex
+  // scan (which can't use a B-tree index).
+  @Prop({ required: true, type: String })
+  nameLower: string;
+
   @Prop({ required: true, type: String })
   address: string;
 
@@ -99,3 +105,4 @@ export class Location extends AbstractDocument {
 export const LocationSchema = SchemaFactory.createForClass(Location);
 LocationSchema.index({ location: '2dsphere' });
 LocationSchema.index({ owner: 1 });
+LocationSchema.index({ nameLower: 1 });

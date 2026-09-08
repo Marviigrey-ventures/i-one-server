@@ -15,16 +15,32 @@ import { handleError } from 'src/helpers/errorHandler';
 import { SessionRepository } from 'src/sessions/sessions.repository';
 import { SessionPaymentService } from 'src/billing/services/session-payment.service';
 import { Types } from 'mongoose';
+import { CacheService } from 'src/cache/cache.service';
 
 @Injectable()
 export class LocationsService {
+  // Redis-backed (not in-process) so the exact-name cache stays correct and
+  // shared across every horizontally-scaled instance — an in-memory Map
+  // would give each instance its own copy and go stale/inconsistent the
+  // moment you run more than one.
+  private readonly NAME_SEARCH_CACHE_TTL = 60 * 60; // 1 hour, safety net alongside explicit invalidation below
+
   constructor(
     private readonly locationRepository: LocationRepository,
     private readonly sessionRepository: SessionRepository,
     private readonly userRepository: UserRepository,
     private readonly matchRepository: MatchRepository,
     private readonly sessionPaymentService: SessionPaymentService,
+    private readonly cacheService: CacheService,
   ) {}
+
+  private nameSearchCacheKey(nameLower: string): string {
+    return `location:name:${nameLower}`;
+  }
+
+  private escapeRegex(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
 
   async registerLocation(locationData: CreateLocationDto, ownerId: Types.ObjectId): Promise<Location> {
     const {
@@ -62,10 +78,13 @@ export class LocationsService {
     }
 
     try {
+      const nameLower = name.trim().toLowerCase();
+
       const payload: any = {
         openingHour,
         closingHour,
         name,
+        nameLower,
         address,
         tier,
         location: {
@@ -91,7 +110,15 @@ export class LocationsService {
         }
       }
      
-      return await this.locationRepository.create(payload);
+      const created = await this.locationRepository.create(payload);
+
+      await this.cacheService.set(
+        this.nameSearchCacheKey(nameLower),
+        JSON.stringify(created),
+        this.NAME_SEARCH_CACHE_TTL,
+      );
+
+      return created;
     } catch (error: any) {
       if (error.code === 11000) {
         throw new CustomHttpException(
@@ -236,18 +263,19 @@ export class LocationsService {
 
 
   async updatePitchCondition(locationId: string, ownerId: string, dto: UpdatePitchConditionDto) {
-    await this.verifyOwnership(locationId, ownerId);
+    const location = await this.verifyOwnership(locationId, ownerId);
 
     const updated = await this.locationRepository.findOneAndUpdate(
       { _id: locationId },
       { pitchCondition: dto.pitchCondition },
     );
+    await this.cacheService.delete(this.nameSearchCacheKey(location.nameLower));
 
     return { message: 'Pitch condition updated', location: updated };
   }
 
   async updateOpeningHours(locationId: string, ownerId: string, dto: UpdateOpeningHoursDto) {
-    await this.verifyOwnership(locationId, ownerId);
+    const location = await this.verifyOwnership(locationId, ownerId);
 
     const [openHour, openMin] = dto.openingHour.split(':').map(Number);
     const [closeHour, closeMin] = dto.closingHour.split(':').map(Number);
@@ -259,12 +287,13 @@ export class LocationsService {
       { _id: locationId },
       { openingHour: dto.openingHour, closingHour: dto.closingHour },
     );
+    await this.cacheService.delete(this.nameSearchCacheKey(location.nameLower));
 
     return { message: 'Opening hours updated', location: updated };
   }
 
   async updateLocationPricing(locationId: string, ownerId: string, dto: UpdateLocationPricingDto) {
-    await this.verifyOwnership(locationId, ownerId);
+    const location = await this.verifyOwnership(locationId, ownerId);
 
     const updatePayload: any = {
       tier: dto.tier,
@@ -315,6 +344,7 @@ export class LocationsService {
       { _id: locationId },
       updatePayload,
     );
+    await this.cacheService.delete(this.nameSearchCacheKey(location.nameLower));
 
     return {
       message: 'Location pricing options updated successfully',
@@ -348,5 +378,50 @@ export class LocationsService {
     } catch (error: any) {
       handleError(error, 'Failed to get location by ID');
     }
+  }
+
+  // Exact-name lookups hit Redis first: O(1) regardless of how many
+  // locations exist or how many app instances are running, since Redis is a
+  // single shared store rather than per-instance memory. Everything else
+  // (no exact hit, or a partial query) falls back to an indexed prefix
+  // query against `nameLower` in Mongo — not O(1), but index-backed rather
+  // than a full scan.
+  async searchLocationsByName(rawName: string) {
+    const name = (rawName ?? '').trim();
+    if (!name) {
+      throw new CustomHttpException('name is required', HttpStatus.BAD_REQUEST);
+    }
+
+    const nameLower = name.toLowerCase();
+    const cacheKey = this.nameSearchCacheKey(nameLower);
+
+    const cached = await this.cacheService.get(cacheKey);
+    if (cached) {
+      return { exact: true, cached: true, results: [JSON.parse(cached)] };
+    }
+
+    const exactMatch = await this.locationRepository.findOne({
+      nameLower,
+      $or: [
+        { status: LOCATION_STATUS.ACTIVE },
+        { status: { $exists: false } },
+      ],
+    });
+
+    if (exactMatch) {
+      await this.cacheService.set(
+        cacheKey,
+        JSON.stringify(exactMatch),
+        this.NAME_SEARCH_CACHE_TTL,
+      );
+      return { exact: true, cached: false, results: [exactMatch] };
+    }
+
+    const partialMatches = await this.locationRepository.searchByNamePrefix(
+      this.escapeRegex(nameLower),
+      10,
+    );
+
+    return { exact: false, cached: false, results: partialMatches };
   }
 }

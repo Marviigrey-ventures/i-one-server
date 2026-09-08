@@ -108,6 +108,7 @@ export class UsersService {
           openingHour: locationDto.openingHour,
           closingHour: locationDto.closingHour,
           name: locationDto.name,
+          nameLower: locationDto.name.trim().toLowerCase(),
           address: locationDto.address,
           tier: locationDto.tier,
           location: {
